@@ -34,24 +34,32 @@ final class PS1GameService {
 
     // MARK: - Reads
 
-    /// Lists PS1 games as `.VCD` filenames directly at the `__.POPS`
-    /// partition's root (see PFSDestinationPaths -- no per-game
-    /// subdirectory). If that partition doesn't exist yet (nothing
-    /// installed), `pfsutil`'s mount would fail outright -- checked for
-    /// explicitly first and short-circuited to an empty list, since "nothing
-    /// set up yet" isn't a real failure. Filters to `.VCD` names
-    /// defensively -- the partition root should only ever contain this
-    /// app's own game files, but never trust that blindly.
+    /// Lists PS1 games as `.VCD` filenames across every existing overflow
+    /// partition (`__.POPS`, `__.POPS1`-`__.POPS10` -- see
+    /// PFSDestinationPaths.allGamesPartitionNamesInOrder), tagging each with
+    /// the specific partition it lives in so delete/reinstall target the
+    /// right one. A single `listAllPartitions` call (not one per candidate
+    /// partition) is reused to check existence of all 11 possible names at
+    /// once -- avoids up to 11 redundant full-partition-table reads over the
+    /// slow USB bridge just to figure out which overflow partitions exist.
     func listGames(on disk: Disk) async throws -> [PS1Game] {
-        guard try await gamesPartitionExists(on: disk) else { return [] }
-        let (names, _, _) = try await helper.listPFSFiles(
-            devicePath: disk.devicePath,
-            partitionName: PFSDestinationPaths.gamesPartitionName,
-            pfsPath: "/"
-        )
-        return (names ?? [])
-            .filter { $0.uppercased().hasSuffix(".VCD") }
-            .map { PS1Game(vcdFilename: $0) }
+        try await discovery.unmountWholeDisk(deviceIdentifier: disk.deviceIdentifier)
+        let (output, _, _) = try await helper.listAllPartitions(devicePath: disk.devicePath)
+        let existingNames = Self.partitionNames(inTOCOutput: output ?? "")
+        let existingGamesPartitions = PFSDestinationPaths.allGamesPartitionNamesInOrder.filter { existingNames.contains($0) }
+
+        var games: [PS1Game] = []
+        for partitionName in existingGamesPartitions {
+            let (names, _, _) = try await helper.listPFSFiles(
+                devicePath: disk.devicePath,
+                partitionName: partitionName,
+                pfsPath: "/"
+            )
+            games.append(contentsOf: (names ?? [])
+                .filter { $0.uppercased().hasSuffix(".VCD") }
+                .map { PS1Game(vcdFilename: $0, partitionName: partitionName) })
+        }
+        return games
     }
 
     func commonPartitionExists(on disk: Disk) async throws -> Bool {
@@ -62,14 +70,36 @@ final class PS1GameService {
         try await partitionExists(named: PFSDestinationPaths.gamesPartitionName, on: disk)
     }
 
-    private func partitionExists(named name: String, on disk: Disk) async throws -> Bool {
+    /// Internal, not private -- reused directly by GameArtworkService for
+    /// the `+OPL` partition, same reasoning as the helpers below.
+    func partitionExists(named name: String, on disk: Disk) async throws -> Bool {
         try await discovery.unmountWholeDisk(deviceIdentifier: disk.deviceIdentifier)
         // hdl_dump's own `toc` (fast, single-pass APA read) rather than
         // pfsshell's `ls`/`lspart` (one raw device read per partition) --
         // the latter hung for minutes on this drive's 46+ partitions over
         // its slow USB-SATA bridge. See project memory for the incident.
         let (output, _, _) = try await helper.listAllPartitions(devicePath: disk.devicePath)
-        return (output ?? "").contains(name)
+        return Self.partitionNames(inTOCOutput: output ?? "").contains(name)
+    }
+
+    /// Extracts exact partition names from `hdl_dump toc`'s output. Confirmed
+    /// directly from source (`hdl_dump.c`'s `show_apa_slice2`): every real
+    /// partition line matches `"0x%04x %06lx00%c%c %2lu %5luMB %s\n"` --
+    /// always starts with `0x` (the hex type field), always ends with the
+    /// name (`part->id`) as the last, space-preceded field with nothing
+    /// after it. Filtering to `0x`-prefixed lines (skipping the header row
+    /// and the trailing "Total slice size: ..." summary line) before taking
+    /// each line's last token means a blind substring search
+    /// (`output.contains(name)`, used before this fix) is no longer needed
+    /// -- which mattered because `__.POPS1` and `__.POPS10` share a prefix,
+    /// so `output.contains("__.POPS1")` would wrongly also match a line
+    /// that's actually `__.POPS10`. Taking each partition line's own last
+    /// token doesn't have that problem.
+    static func partitionNames(inTOCOutput output: String) -> Set<String> {
+        Set(output.split(separator: "\n").compactMap { line -> String? in
+            guard line.hasPrefix("0x") else { return nil }
+            return line.split(separator: " ").last.map(String.init)
+        })
     }
 
     // MARK: - Setup (PopStarter system partitions)
@@ -130,22 +160,57 @@ final class PS1GameService {
     /// vcdFilename is the exact destination filename at the partition
     /// root -- callers build it via PFSDestinationPaths.gameVCDFilename(
     /// forGameNamed:) so the 73-character POPStarter limit and ".VCD"
-    /// extension convention are enforced in one place.
-    func installGame(vcdURL: URL, vcdFilename: String, on disk: Disk) async throws {
+    /// extension convention are enforced in one place. partitionName must
+    /// be one of PFSDestinationPaths.allGamesPartitionNamesInOrder -- most
+    /// callers should use `installGameWithOverflow` instead of calling this
+    /// directly, since it picks the right (or a new overflow) partition.
+    func installGame(vcdURL: URL, vcdFilename: String, partitionName: String, on disk: Disk) async throws {
         try await guardNotBootDisk(disk)
         try await putFile(
             localURL: vcdURL,
-            partitionName: PFSDestinationPaths.gamesPartitionName,
+            partitionName: partitionName,
             pfsPath: vcdFilename,
             on: disk
         )
     }
 
-    func deleteGame(vcdFilename: String, on disk: Disk) async throws {
+    /// Installs into `__.POPS`, falling through to `__.POPS1`,
+    /// `__.POPS2`, ... `__.POPS10` in order -- creating the next partition
+    /// (at `defaultPartitionSizeBytes`) and retrying whenever the current
+    /// one is full, entirely transparent to the caller. PFS partitions
+    /// can't be resized in place (confirmed: pfsshell has no resize/grow
+    /// command in its command table), so growing the *effective* PS1 games
+    /// partition capacity beyond the OS's original size ultimately means
+    /// this, not making one partition bigger after the fact. Any failure
+    /// that ISN'T specifically an out-of-space condition (see
+    /// `HDLDumpError.isLikelyOutOfSpace`) is rethrown immediately rather
+    /// than cascading through all 11 partitions on an unrelated error (e.g.
+    /// missing Full Disk Access, boot-disk refusal).
+    func installGameWithOverflow(vcdURL: URL, vcdFilename: String, defaultPartitionSizeBytes: Int64, on disk: Disk) async throws {
+        var lastOutOfSpaceError: Error?
+        for partitionName in PFSDestinationPaths.allGamesPartitionNamesInOrder {
+            do {
+                if try await !partitionExists(named: partitionName, on: disk) {
+                    try await createPartition(name: partitionName, sizeBytes: defaultPartitionSizeBytes, on: disk)
+                }
+                try await installGame(vcdURL: vcdURL, vcdFilename: vcdFilename, partitionName: partitionName, on: disk)
+                return
+            } catch let error as HDLDumpError where error.isLikelyOutOfSpace {
+                lastOutOfSpaceError = error
+                continue
+            }
+        }
+        // All 11 partitions (__.POPS through __.POPS10) are full -- a
+        // genuinely exceptional amount of PS1 games. Surface the last
+        // out-of-space error rather than a generic one.
+        throw lastOutOfSpaceError ?? HDLDumpError.noSpace
+    }
+
+    func deleteGame(vcdFilename: String, partitionName: String, on disk: Disk) async throws {
         try await guardNotBootDisk(disk)
         let (exitCode, stderr) = try await helper.removePFSFile(
             devicePath: disk.devicePath,
-            partitionName: PFSDestinationPaths.gamesPartitionName,
+            partitionName: partitionName,
             pfsPath: vcdFilename
         )
         try throwIfFailed(exitCode: exitCode, stderr: stderr)
@@ -153,13 +218,32 @@ final class PS1GameService {
 
     // MARK: - Helpers
 
-    private func createPartition(name: String, sizeBytes: Int64, on disk: Disk) async throws {
+    /// Internal, not private -- these are generic PFS primitives (not
+    /// specific to PS1 games), reused directly by GameArtworkService via
+    /// composition so it doesn't have to duplicate already-correct,
+    /// hardware-verified partition/file-write/error-mapping logic.
+
+    func createPartition(name: String, sizeBytes: Int64, on disk: Disk) async throws {
         try await guardNotBootDisk(disk)
         let (exitCode, stderr) = try await helper.createPOPSPartition(devicePath: disk.devicePath, partitionName: name, sizeBytes: sizeBytes)
         try throwIfFailed(exitCode: exitCode, stderr: stderr)
     }
 
-    private func putFile(localURL: URL, partitionName: String, pfsPath: String, on disk: Disk) async throws {
+    /// Reads a small file's contents back from a PFS partition -- e.g. to
+    /// display previously-installed cover art. See HDLDumpHelperProtocol's
+    /// getPFSFile doc comment for why this is only meant for small files.
+    func getFile(partitionName: String, pfsPath: String, on disk: Disk) async throws -> Data {
+        let (data, exitCode, stderr) = try await helper.getPFSFile(
+            devicePath: disk.devicePath,
+            partitionName: partitionName,
+            pfsPath: pfsPath
+        )
+        try throwIfFailed(exitCode: exitCode, stderr: stderr)
+        guard let data else { throw HDLDumpError.fileNotFound }
+        return data
+    }
+
+    func putFile(localURL: URL, partitionName: String, pfsPath: String, on disk: Disk) async throws {
         let (exitCode, stderr) = try await helper.putPFSFile(
             devicePath: disk.devicePath,
             partitionName: partitionName,
@@ -172,7 +256,7 @@ final class PS1GameService {
     /// Cheap client-side fail-fast, intentionally redundant with the daemon's
     /// own independent boot-disk re-check -- defense in depth, matching
     /// HDLDumpService's identical guard.
-    private func guardNotBootDisk(_ disk: Disk) async throws {
+    func guardNotBootDisk(_ disk: Disk) async throws {
         if await discovery.isBootDisk(deviceIdentifier: disk.deviceIdentifier) {
             throw HDLDumpError.operationNotAllowed
         }
@@ -184,7 +268,7 @@ final class PS1GameService {
     /// isLikelyMissingFullDiskAccess actually checks. Using .unknown here
     /// silently disabled the FullDiskAccessSheet recovery flow for every
     /// PS1/PopStarter operation.
-    private func throwIfFailed(exitCode: Int32, stderr: String) throws {
+    func throwIfFailed(exitCode: Int32, stderr: String) throws {
         guard exitCode != 0 else { return }
         throw HDLDumpError(exitCode: exitCode, stderr: stderr)
     }

@@ -44,6 +44,22 @@ enum HDLDumpError: Error, LocalizedError {
         return false
     }
 
+    /// pfsutil/pfsshell (unlike hdl_dump) only ever return exit code 0 or 1
+    /// -- a full PFS partition surfaces as exit 1 (`.ioError`), not a
+    /// distinguishing exit code. Detected by message content instead:
+    /// confirmed empirically (per project practice, not assumed) against a
+    /// real scratch PFS partition filled to capacity -- pfsutil's `put`
+    /// prints "write failed: No space left on device" (via strerror() on the
+    /// negative errno-style return from iomanX_write) once this project's
+    /// own Scripts/pfsutil-src/pfsutil.c was fixed to report it clearly
+    /// instead of a bare negative number.
+    var isLikelyOutOfSpace: Bool {
+        if case .ioError(let message) = self {
+            return message.localizedCaseInsensitiveContains("No space left on device")
+        }
+        return false
+    }
+
     init(exitCode: Int32, stderr: String) {
         switch exitCode {
         case -1: self = .daemonLaunchFailed(message: stderr)

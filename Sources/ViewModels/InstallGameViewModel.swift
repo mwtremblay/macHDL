@@ -14,14 +14,18 @@ final class InstallGameViewModel: ObservableObject {
     @Published private(set) var progressText: String = ""
 
     private let service: HDLDumpService
+    private let artworkService: GameArtworkService
+    private let artworkFetcher: GameArtworkFetcher
     private var elapsedTimer: Timer?
     private var startedAt: Date?
 
     /// Files above this size are assumed to be DVD-sized PS2 images.
     private static let dvdSizeThresholdBytes: Int64 = 700_000_000
 
-    init(service: HDLDumpService) {
+    init(service: HDLDumpService, artworkService: GameArtworkService, artworkFetcher: GameArtworkFetcher = GameArtworkFetcher()) {
         self.service = service
+        self.artworkService = artworkService
+        self.artworkFetcher = artworkFetcher
     }
 
     var isNameValid: Bool {
@@ -45,6 +49,7 @@ final class InstallGameViewModel: ObservableObject {
 
     func install(on disk: Disk, completion: @escaping () async -> Void) async {
         guard let sourceURL else { return }
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
         isInstalling = true
         progressFraction = nil
         progressText = ""
@@ -57,7 +62,7 @@ final class InstallGameViewModel: ObservableObject {
         do {
             try await service.installGame(
                 sourceISO: sourceURL,
-                name: name.trimmingCharacters(in: .whitespaces),
+                name: trimmedName,
                 isDVD: isDVD,
                 on: disk,
                 onProgress: { [weak self] line in
@@ -67,6 +72,7 @@ final class InstallGameViewModel: ObservableObject {
                 }
             )
             await completion()
+            await autoFetchArtworkBestEffort(gameName: trimmedName, on: disk)
         } catch HDLDumpError.interrupted {
             // User-initiated cancel (in practice the only realistic trigger
             // for RET_INTERRUPTED here) -- quiet, expected dismissal, not an
@@ -81,6 +87,19 @@ final class InstallGameViewModel: ObservableObject {
     /// partition table -- see the plan for the verified source references.
     func cancel() async {
         _ = await service.cancelInstall()
+    }
+
+    /// Best-effort, silent -- the game install already succeeded and
+    /// reported success by the time this runs. Network/lookup/write
+    /// failures here must never surface as an install error. Re-lists games
+    /// to find the just-installed one by name since hdl_dump's own install
+    /// doesn't hand back the detected Game ID directly -- it's only known
+    /// via HDLGame.startup after a fresh listing.
+    private func autoFetchArtworkBestEffort(gameName: String, on disk: Disk) async {
+        guard let games = try? await service.listGames(on: disk),
+              let game = games.first(where: { $0.name == gameName }) else { return }
+        guard let data = try? await artworkFetcher.fetchCoverArt(platform: .ps2, gameID: game.startup) else { return }
+        try? await artworkService.installPS2CoverArt(gameID: game.startup, imageData: data, on: disk)
     }
 
     private func handleProgressLine(_ line: String) {

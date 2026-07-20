@@ -133,6 +133,14 @@ final class HDLDumpHelperClient {
         }
     }
 
+    func getPFSFile(devicePath: String, partitionName: String, pfsPath: String) async throws -> (data: Data?, exitCode: Int32, stderr: String) {
+        try await performCall { helper, complete in
+            helper.getPFSFile(devicePath: devicePath, partitionName: partitionName, pfsPath: pfsPath) { data, exitCode, stderr in
+                complete(.success((data, exitCode, stderr)))
+            }
+        }
+    }
+
     func removePFSFile(devicePath: String, partitionName: String, pfsPath: String) async throws -> (exitCode: Int32, stderr: String) {
         try await performCall { helper, complete in
             helper.removePFSFile(devicePath: devicePath, partitionName: partitionName, pfsPath: pfsPath) { exitCode, stderr in

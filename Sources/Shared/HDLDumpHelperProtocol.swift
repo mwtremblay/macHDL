@@ -71,6 +71,15 @@ enum HDLDumpHelperConstants {
 
     func putPFSFile(devicePath: String, partitionName: String, localSourcePath: String, pfsDestPath: String, with reply: @escaping (Int32, String) -> Void)
 
+    /// Reads a single file's contents back from a PFS partition into memory
+    /// via `pfsutil get`, e.g. to display previously-installed cover art.
+    /// Only intended for small files (cover art PNGs, tens-hundreds of KB) --
+    /// unlike putPFSFile (which takes a local path, since VCDs can be
+    /// hundreds of MB), this returns the bytes directly over XPC. A read,
+    /// like listPFSFiles/gameInfo -- no partition-name allowlist or
+    /// boot-disk check, matching that existing precedent.
+    func getPFSFile(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Data?, Int32, String) -> Void)
+
     /// Removes a single file at the given path (not a directory -- a PS1
     /// game's VCD sits directly at the partition root, see
     /// PFSDestinationPaths).

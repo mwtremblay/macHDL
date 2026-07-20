@@ -22,8 +22,25 @@ struct PS1GameListView: View {
                 ProgressView("Deleting…")
                     .padding()
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            } else if viewModel.isFetchingAllArtwork {
+                VStack(spacing: 6) {
+                    ProgressView(viewModel.bulkArtworkProgressText.isEmpty ? "Fetching Artwork…" : viewModel.bulkArtworkProgressText)
+                    Button("Cancel") { viewModel.cancelBulkArtworkFetch() }
+                }
+                .padding()
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
             } else if viewModel.isLoading {
                 ProgressView()
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let summary = viewModel.bulkArtworkSummary {
+                Text(summary)
+                    .font(.caption)
+                    .padding(8)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.bottom, 12)
+                    .onTapGesture { viewModel.bulkArtworkSummary = nil }
             }
         }
     }

@@ -222,6 +222,29 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
         }
     }
 
+    func getPFSFile(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Data?, Int32, String) -> Void) {
+        Task {
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: tempURL) }
+            do {
+                let result = try await runner.run(
+                    binary: try HelperToolBinaryLocator.resolvePFSUtil(),
+                    arguments: ["get", devicePath, partitionName, pfsPath, tempURL.path],
+                    workingDirectory: FileManager.default.temporaryDirectory,
+                    onOutputLine: nil,
+                    trackForCancellation: false
+                )
+                guard result.exitCode == 0 else {
+                    reply(nil, result.exitCode, result.stderr)
+                    return
+                }
+                reply(try? Data(contentsOf: tempURL), result.exitCode, result.stderr)
+            } catch {
+                reply(nil, -1, "launch failed: \(error)")
+            }
+        }
+    }
+
     /// Removes a single file at the given path within the partition -- a PS1
     /// game's VCD sits directly at the partition root (never in a
     /// subdirectory; see PFSDestinationPaths for why), so deleting a game is
@@ -283,10 +306,11 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// Never trust a client-supplied partition name for a partition-table-
     /// mutating operation -- restrict to the documented PopStarter
     /// convention: the games partition (`__.POPS`, plus overflow
-    /// `__.POPS1`-`__.POPS10`) and the shared system-files partition
-    /// (`__common`).
+    /// `__.POPS1`-`__.POPS10`), the shared system-files partition
+    /// (`__common`), and OPL's own dedicated partition (`+OPL`, used for
+    /// PS2 cover art -- see PFSDestinationPaths.oplPartitionName).
     private static func isValidPFSPartitionName(_ name: String) -> Bool {
-        if name == "__.POPS" || name == "__common" { return true }
+        if name == "__.POPS" || name == "__common" || name == "+OPL" { return true }
         for suffix in 1...10 where name == "__.POPS\(suffix)" {
             return true
         }

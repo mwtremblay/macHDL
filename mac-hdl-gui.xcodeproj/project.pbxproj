@@ -15,11 +15,14 @@
 		242A4BA0502887AE8E0FED29 /* GameInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399733C861D2609DA2C34084 /* GameInfoSheet.swift */; };
 		25CB3A785B81ACEE1F59CF85 /* CSVGameListParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0456E9ED588392536D7E2D /* CSVGameListParserTests.swift */; };
 		2D2340C7DEC399496607972D /* POPSLOADER.ELF in Resources */ = {isa = PBXBuildFile; fileRef = 584A0E46157E1C3592338380 /* POPSLOADER.ELF */; };
+		31EDD864C133FC5EBD6008D3 /* BatchInstallGameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583F14346BBB534852F973AD /* BatchInstallGameViewModel.swift */; };
 		3B28E6755302464D7DB1EC6D /* PFSDestinationPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658D48D918DC95EB8EECCD5B /* PFSDestinationPaths.swift */; };
 		40710DC0DBCA3669FA8CA57A /* BundledBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC17F1C93607D134C19C6BB2 /* BundledBinaryLocator.swift */; };
 		47A7664C00839347D1AC4C9D /* POPSTARTER.ELF in Resources */ = {isa = PBXBuildFile; fileRef = 2451D8A7FA5CFC315045505E /* POPSTARTER.ELF */; };
 		48BF563B3CB9269889A899FB /* HelperRegistrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9955E0A95BBCF512EB90C6 /* HelperRegistrationViewModel.swift */; };
+		534322EA7166852062E6E0FD /* PS1GameIDDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3665B6E25F0841ACF44C99FE /* PS1GameIDDetector.swift */; };
 		5C6172BD898949136A5E2B47 /* HelperApprovalSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E91D04524CA27B9897CCA1 /* HelperApprovalSheet.swift */; };
+		5CA989C6582D311BF7E9D5D9 /* BatchAddGameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E8FBA6E759723A493D444F /* BatchAddGameSheet.swift */; };
 		5D8AE421DBDB3605F2D686F1 /* PFSShellSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C93FDD2C149514C07585DC /* PFSShellSession.swift */; };
 		5E9C57B99A5D5C611AEE454C /* HelperProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952CDC1B811CDF4B29F6A4F0 /* HelperProcessRunner.swift */; };
 		611469E790B63EBC0750337D /* HDLDumpHelperListenerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C99A53EF71A3E0F1B5DEA /* HDLDumpHelperListenerDelegate.swift */; };
@@ -40,11 +43,15 @@
 		9DF617705C7A31D1311FA3A0 /* Disk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D2B93C6850590FA3466325D /* Disk.swift */; };
 		9F0E44DBA09F71F8A75F08DC /* GameListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18ACEA360378119CE30303C /* GameListViewModel.swift */; };
 		9F5D205AFDCF3FE219AF6215 /* DriveSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23442CD85DC7A79F268C09F9 /* DriveSidebarView.swift */; };
+		A17094758F23A098E6AA1E00 /* PS1GameServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAB7083C50369FA7FFB21C7 /* PS1GameServiceTests.swift */; };
 		A431DB4CAE302CE3D7A70F35 /* FullDiskAccessSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75065051A670A11156987AF9 /* FullDiskAccessSheet.swift */; };
 		AA5969B017184B43258383F3 /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3087C2C9ABB55A32703518A7 /* GameListView.swift */; };
+		B472FE13C8BE23EE69F0BBD7 /* GameArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08F94F329A5B83C6B493EDA1 /* GameArtworkService.swift */; };
+		B69D473DC4A00D36727A4B2D /* GameArtworkFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB39FF6365BFE7FDAE731683 /* GameArtworkFetcher.swift */; };
 		B8776D21F6155FDDCFFCB7A1 /* ProgressSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC3C7BABBE8D10AED0B8310 /* ProgressSheet.swift */; };
 		B990AEFC3D11117A2BAB45FF /* CueSheetAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFFFD7A562C2985CEB8C8D /* CueSheetAnalyzerTests.swift */; };
 		C5661D28C4FFC48C5A840D7A /* HDLDumpProgressParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1F299F181C9ACD10ECAEEC /* HDLDumpProgressParser.swift */; };
+		C706FF7DAE65ACF7DF50BF2F /* FetchPS1ArtworkSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ABCEBDB59E2FC38342929DC /* FetchPS1ArtworkSheet.swift */; };
 		C738FEF07A895D53E88C361C /* HDLDumpHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800538CDE2FB45E533D8F32A /* HDLDumpHelperProtocol.swift */; };
 		C9C3515DC237CAAC4D81DDF9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAD1E737157680B11450F5BF /* main.swift */; };
 		CA14A544AF978B46817D9AAD /* HelperToolBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C540F0737520150AD5BCC25 /* HelperToolBinaryLocator.swift */; };
@@ -52,6 +59,7 @@
 		D58CFB70ED40559EA3193AB9 /* HDLDumpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DF948E16FE98BEDC0372D5 /* HDLDumpService.swift */; };
 		D7B836691717E5EEEEA01727 /* DriveListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174F959DEBAD91E51DDE30D9 /* DriveListViewModel.swift */; };
 		DC97D964B04BBFD456B09511 /* PFSPartitionSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232941A22BA34E7590AFEBB0 /* PFSPartitionSizingTests.swift */; };
+		DF3191BD8DE3D0CA07AA3E8C /* FetchPS1ArtworkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 288F6B3E21A0EA654B852F0F /* FetchPS1ArtworkViewModel.swift */; };
 		E103937CF22B89F9D2543C5F /* PS1Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = B243306A82BFC5410860C036 /* PS1Game.swift */; };
 		E4A5B954AE3155EF9550FC09 /* DiskDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */; };
 		E565BC0248DB15AAEBC1476B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1084A7F21F697B39B90B391 /* ContentView.swift */; };
@@ -80,6 +88,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		08F94F329A5B83C6B493EDA1 /* GameArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameArtworkService.swift; sourceTree = "<group>"; };
 		12D9CA7E69FC23739CA81C2E /* InstallPS1GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallPS1GameViewModel.swift; sourceTree = "<group>"; };
 		174F959DEBAD91E51DDE30D9 /* DriveListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveListViewModel.swift; sourceTree = "<group>"; };
 		199508D2F88BE350E0CDB8AC /* IdentifiableError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifiableError.swift; sourceTree = "<group>"; };
@@ -87,17 +96,22 @@
 		23442CD85DC7A79F268C09F9 /* DriveSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveSidebarView.swift; sourceTree = "<group>"; };
 		23E9E4628A4D3283B48FA9D1 /* AddPS1GameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPS1GameSheet.swift; sourceTree = "<group>"; };
 		2451D8A7FA5CFC315045505E /* POPSTARTER.ELF */ = {isa = PBXFileReference; path = POPSTARTER.ELF; sourceTree = "<group>"; };
+		288F6B3E21A0EA654B852F0F /* FetchPS1ArtworkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchPS1ArtworkViewModel.swift; sourceTree = "<group>"; };
+		2ABCEBDB59E2FC38342929DC /* FetchPS1ArtworkSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchPS1ArtworkSheet.swift; sourceTree = "<group>"; };
 		2CDFFFD7A562C2985CEB8C8D /* CueSheetAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueSheetAnalyzerTests.swift; sourceTree = "<group>"; };
 		2D2B93C6850590FA3466325D /* Disk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disk.swift; sourceTree = "<group>"; };
 		3087C2C9ABB55A32703518A7 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
+		3665B6E25F0841ACF44C99FE /* PS1GameIDDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameIDDetector.swift; sourceTree = "<group>"; };
 		399733C861D2609DA2C34084 /* GameInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameInfoSheet.swift; sourceTree = "<group>"; };
 		4C540F0737520150AD5BCC25 /* HelperToolBinaryLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperToolBinaryLocator.swift; sourceTree = "<group>"; };
 		53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSPartitionSizing.swift; sourceTree = "<group>"; };
 		53DF948E16FE98BEDC0372D5 /* HDLDumpService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpService.swift; sourceTree = "<group>"; };
 		579B976170D7F51A5D8CB9A3 /* AddGameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddGameSheet.swift; sourceTree = "<group>"; };
+		583F14346BBB534852F973AD /* BatchInstallGameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchInstallGameViewModel.swift; sourceTree = "<group>"; };
 		584A0E46157E1C3592338380 /* POPSLOADER.ELF */ = {isa = PBXFileReference; path = POPSLOADER.ELF; sourceTree = "<group>"; };
 		658D48D918DC95EB8EECCD5B /* PFSDestinationPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSDestinationPaths.swift; sourceTree = "<group>"; };
 		6A192C03D414DD1C76BCDD58 /* HDLGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLGame.swift; sourceTree = "<group>"; };
+		6AAB7083C50369FA7FFB21C7 /* PS1GameServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameServiceTests.swift; sourceTree = "<group>"; };
 		6ECFC1DFC466A04ADAD00B83 /* HDLDumpProgressParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpProgressParserTests.swift; sourceTree = "<group>"; };
 		6FE7CD2FE31A40D6E072AD40 /* PS1GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameListView.swift; sourceTree = "<group>"; };
 		75065051A670A11156987AF9 /* FullDiskAccessSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullDiskAccessSheet.swift; sourceTree = "<group>"; };
@@ -112,6 +126,7 @@
 		9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskDiscoveryService.swift; sourceTree = "<group>"; };
 		A1084A7F21F697B39B90B391 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A149988A4470B2C5147A4C9F /* HDLDumpHelperClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperClient.swift; sourceTree = "<group>"; };
+		A1E8FBA6E759723A493D444F /* BatchAddGameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchAddGameSheet.swift; sourceTree = "<group>"; };
 		AE1F299F181C9ACD10ECAEEC /* HDLDumpProgressParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpProgressParser.swift; sourceTree = "<group>"; };
 		B243306A82BFC5410860C036 /* PS1Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1Game.swift; sourceTree = "<group>"; };
 		B686ADB794ED7D53C1A3293E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -123,6 +138,7 @@
 		BF9955E0A95BBCF512EB90C6 /* HelperRegistrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperRegistrationViewModel.swift; sourceTree = "<group>"; };
 		CA01537C8C1C8BBB45CB4753 /* mac-hdl-guiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "mac-hdl-guiTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA7A379BC3F3CD2E63DA65FA /* HDLDumpError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpError.swift; sourceTree = "<group>"; };
+		CB39FF6365BFE7FDAE731683 /* GameArtworkFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameArtworkFetcher.swift; sourceTree = "<group>"; };
 		CC6F0B9036D6D4ED794B232E /* HDLDumpHelperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperService.swift; sourceTree = "<group>"; };
 		CCC3C7BABBE8D10AED0B8310 /* ProgressSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSheet.swift; sourceTree = "<group>"; };
 		D18ACEA360378119CE30303C /* GameListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListViewModel.swift; sourceTree = "<group>"; };
@@ -154,8 +170,10 @@
 			children = (
 				579B976170D7F51A5D8CB9A3 /* AddGameSheet.swift */,
 				23E9E4628A4D3283B48FA9D1 /* AddPS1GameSheet.swift */,
+				A1E8FBA6E759723A493D444F /* BatchAddGameSheet.swift */,
 				A1084A7F21F697B39B90B391 /* ContentView.swift */,
 				23442CD85DC7A79F268C09F9 /* DriveSidebarView.swift */,
+				2ABCEBDB59E2FC38342929DC /* FetchPS1ArtworkSheet.swift */,
 				75065051A670A11156987AF9 /* FullDiskAccessSheet.swift */,
 				399733C861D2609DA2C34084 /* GameInfoSheet.swift */,
 				3087C2C9ABB55A32703518A7 /* GameListView.swift */,
@@ -206,11 +224,14 @@
 				F32620DAB775D5EA9F512FA0 /* CSVGameListParser.swift */,
 				895BDD569D2EC686769AA7EC /* CueSheetAnalyzer.swift */,
 				9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */,
+				CB39FF6365BFE7FDAE731683 /* GameArtworkFetcher.swift */,
+				08F94F329A5B83C6B493EDA1 /* GameArtworkService.swift */,
 				CA7A379BC3F3CD2E63DA65FA /* HDLDumpError.swift */,
 				A149988A4470B2C5147A4C9F /* HDLDumpHelperClient.swift */,
 				AE1F299F181C9ACD10ECAEEC /* HDLDumpProgressParser.swift */,
 				53DF948E16FE98BEDC0372D5 /* HDLDumpService.swift */,
 				E888622D091761D14693EBAE /* PS1GameConverter.swift */,
+				3665B6E25F0841ACF44C99FE /* PS1GameIDDetector.swift */,
 				96CABE17F5DDFE707904CEFE /* PS1GameService.swift */,
 				844753728657FF914B471643 /* SplitDumpCombiner.swift */,
 			);
@@ -231,7 +252,9 @@
 		CDEAA9735AF9D3E0F534A360 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				583F14346BBB534852F973AD /* BatchInstallGameViewModel.swift */,
 				174F959DEBAD91E51DDE30D9 /* DriveListViewModel.swift */,
+				288F6B3E21A0EA654B852F0F /* FetchPS1ArtworkViewModel.swift */,
 				D18ACEA360378119CE30303C /* GameListViewModel.swift */,
 				BF9955E0A95BBCF512EB90C6 /* HelperRegistrationViewModel.swift */,
 				B894DA99F86C2155D5CB0C88 /* InstallGameViewModel.swift */,
@@ -249,6 +272,7 @@
 				2CDFFFD7A562C2985CEB8C8D /* CueSheetAnalyzerTests.swift */,
 				6ECFC1DFC466A04ADAD00B83 /* HDLDumpProgressParserTests.swift */,
 				232941A22BA34E7590AFEBB0 /* PFSPartitionSizingTests.swift */,
+				6AAB7083C50369FA7FFB21C7 /* PS1GameServiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -542,6 +566,8 @@
 			files = (
 				8E0298274EF91F344B38AEF4 /* AddGameSheet.swift in Sources */,
 				6DBEDEA983BEE1754E4D65B4 /* AddPS1GameSheet.swift in Sources */,
+				5CA989C6582D311BF7E9D5D9 /* BatchAddGameSheet.swift in Sources */,
+				31EDD864C133FC5EBD6008D3 /* BatchInstallGameViewModel.swift in Sources */,
 				40710DC0DBCA3669FA8CA57A /* BundledBinaryLocator.swift in Sources */,
 				FABBAA3CB3655F23E7EA32AB /* CSVGameListParser.swift in Sources */,
 				E565BC0248DB15AAEBC1476B /* ContentView.swift in Sources */,
@@ -550,7 +576,11 @@
 				E4A5B954AE3155EF9550FC09 /* DiskDiscoveryService.swift in Sources */,
 				D7B836691717E5EEEEA01727 /* DriveListViewModel.swift in Sources */,
 				9F5D205AFDCF3FE219AF6215 /* DriveSidebarView.swift in Sources */,
+				C706FF7DAE65ACF7DF50BF2F /* FetchPS1ArtworkSheet.swift in Sources */,
+				DF3191BD8DE3D0CA07AA3E8C /* FetchPS1ArtworkViewModel.swift in Sources */,
 				A431DB4CAE302CE3D7A70F35 /* FullDiskAccessSheet.swift in Sources */,
+				B69D473DC4A00D36727A4B2D /* GameArtworkFetcher.swift in Sources */,
+				B472FE13C8BE23EE69F0BBD7 /* GameArtworkService.swift in Sources */,
 				242A4BA0502887AE8E0FED29 /* GameInfoSheet.swift in Sources */,
 				AA5969B017184B43258383F3 /* GameListView.swift in Sources */,
 				9F0E44DBA09F71F8A75F08DC /* GameListViewModel.swift in Sources */,
@@ -569,6 +599,7 @@
 				7CE33C76AC5587CD5CC03257 /* PFSPartitionSizing.swift in Sources */,
 				E103937CF22B89F9D2543C5F /* PS1Game.swift in Sources */,
 				81660DC4F303CAD3027E275C /* PS1GameConverter.swift in Sources */,
+				534322EA7166852062E6E0FD /* PS1GameIDDetector.swift in Sources */,
 				F11F45195F9C19FE1BEA1B13 /* PS1GameListView.swift in Sources */,
 				8CAC9326794FEA403135E065 /* PS1GameListViewModel.swift in Sources */,
 				FFB8F4EEBEDD600EFADF12F0 /* PS1GameService.swift in Sources */,
@@ -588,6 +619,7 @@
 				B990AEFC3D11117A2BAB45FF /* CueSheetAnalyzerTests.swift in Sources */,
 				9932C575E08D0FAF22C03F0B /* HDLDumpProgressParserTests.swift in Sources */,
 				DC97D964B04BBFD456B09511 /* PFSPartitionSizingTests.swift in Sources */,
+				A17094758F23A098E6AA1E00 /* PS1GameServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -639,7 +671,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.michaeltremblay.machdl;
 				PRODUCT_NAME = macHDL;
 				SDKROOT = macosx;
@@ -661,7 +693,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.michaeltremblay.machdl;
 				PRODUCT_NAME = macHDL;
 				SDKROOT = macosx;

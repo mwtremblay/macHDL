@@ -17,26 +17,38 @@ final class InstallPS1GameViewModel: ObservableObject {
     @Published var lastError: IdentifiableError?
     @Published private(set) var elapsedSeconds: Int = 0
 
-    /// New `__.POPS` partitions are created at this size the first time a
-    /// PS1 game is installed on a drive that doesn't have one yet. Sized to
-    /// comfortably hold a handful of PS1 games (VCDs are typically
-    /// 600-750MB, matching their CD-ROM origin).
-    static let defaultGamesPartitionSizeBytes: Int64 = 4_000_000_000
+    /// New PS1 games partitions (`__.POPS`, or an overflow `__.POPS1`-
+    /// `__.POPS10` once a previous one fills up -- see
+    /// `PS1GameService.installGameWithOverflow`) are created at this size.
+    /// Originally 4GB ("a handful of games"), which in real use only fit 4
+    /// games before filling up (VCDs are typically 600MB-1GB) -- bumped
+    /// significantly for real libraries, now that filling a partition is a
+    /// transparent, automatic overflow instead of a hard install failure.
+    static let defaultGamesPartitionSizeBytes: Int64 = 32_000_000_000
 
     private let service: PS1GameService
     private let converter: PS1GameConverter
     private let combiner: SplitDumpCombiner
+    private let artworkService: GameArtworkService
+    private let artworkFetcher: GameArtworkFetcher
+    private let gameIDDetector: PS1GameIDDetector
     private var elapsedTimer: Timer?
     private var startedAt: Date?
 
     init(
         service: PS1GameService,
+        artworkService: GameArtworkService,
         converter: PS1GameConverter = PS1GameConverter(),
-        combiner: SplitDumpCombiner = SplitDumpCombiner()
+        combiner: SplitDumpCombiner = SplitDumpCombiner(),
+        artworkFetcher: GameArtworkFetcher = GameArtworkFetcher(),
+        gameIDDetector: PS1GameIDDetector = PS1GameIDDetector()
     ) {
         self.service = service
         self.converter = converter
         self.combiner = combiner
+        self.artworkService = artworkService
+        self.artworkFetcher = artworkFetcher
+        self.gameIDDetector = gameIDDetector
     }
 
     var isNameValid: Bool {
@@ -110,13 +122,35 @@ final class InstallPS1GameViewModel: ObservableObject {
             _ = try await converter.convert(cueURL: cueToConvert, outputVCDURL: vcdURL)
 
             phase = .copyingToDrive
-            try await service.createGamesPartitionIfNeeded(sizeBytes: Self.defaultGamesPartitionSizeBytes, on: disk)
-            try await service.installGame(vcdURL: vcdURL, vcdFilename: vcdFilename, on: disk)
+            try await service.installGameWithOverflow(
+                vcdURL: vcdURL,
+                vcdFilename: vcdFilename,
+                defaultPartitionSizeBytes: Self.defaultGamesPartitionSizeBytes,
+                on: disk
+            )
 
             await completion()
+            await autoFetchArtworkBestEffort(cueURL: sourceURL, vcdFilename: vcdFilename, on: disk)
         } catch {
             lastError = IdentifiableError(underlying: error)
         }
+    }
+
+    /// Best-effort, silent -- the game install already succeeded and
+    /// reported success by this point. Reuses the original source .cue
+    /// still in scope here (via `sourceURL`, the parameter passed in) to
+    /// detect a Game ID for art lookup -- this is the one point in this
+    /// app's lifecycle where that source file is guaranteed available
+    /// without asking the user to re-select it (see FetchPS1ArtworkSheet
+    /// for the retroactive/re-select path used for already-installed games).
+    private func autoFetchArtworkBestEffort(cueURL: URL, vcdFilename: String, on disk: Disk) async {
+        guard let gameID = try? await gameIDDetector.detectGameID(cueOrBinURL: cueURL) else { return }
+        // Store the detected ID regardless of whether the art fetch below
+        // succeeds -- e.g. a transient network failure shouldn't force the
+        // user to re-select the disc image again later just to retry.
+        try? await artworkService.storeGameID(gameID, forVCDFilename: vcdFilename, on: disk)
+        guard let data = try? await artworkFetcher.fetchCoverArt(platform: .ps1, gameID: gameID) else { return }
+        try? await artworkService.installPS1CoverArt(vcdFilename: vcdFilename, imageData: data, on: disk)
     }
 
     private func onSourceURLChanged() {

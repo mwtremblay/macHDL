@@ -122,7 +122,18 @@ static int cmd_put(const char *partition_name, const char *pfs_dest_dir, const c
         long len;
         while ((len = read(in_file, buf, sizeof(buf))) > 0) {
             int written = iomanX_write(out_file, buf, (int)len);
-            if (written != (int)len) {
+            if (written < 0) {
+                /* A negative return is an errno-style code (e.g. -ENOSPC
+                 * when the partition is full), not a partial-write byte
+                 * count -- confirmed empirically against a real filled-up
+                 * scratch PFS partition ("wrote -28 of 65536 bytes" before
+                 * this fix). strerror() gives a stable, portable message
+                 * ("No space left on device") the app can match on, instead
+                 * of a raw negative number tied to a specific errno value. */
+                fprintf(stderr, "(!) %s: write failed: %s\n", dest_path, strerror(-written));
+                retval = 1;
+                break;
+            } else if (written != (int)len) {
                 fprintf(stderr, "(!) %s: write failed (wrote %d of %ld bytes)\n", dest_path, written, len);
                 retval = 1;
                 break;
@@ -143,6 +154,52 @@ static int cmd_put(const char *partition_name, const char *pfs_dest_dir, const c
     }
 
     close(in_file);
+    unmount_partition();
+    return retval;
+}
+
+/* Reverse of cmd_put -- reads a single file out of the PFS partition and
+ * writes it to a local path. Added for the game-artwork-display feature:
+ * showing a previously-fetched cover in the app needs to read it back off
+ * the drive, since nothing before this kept a local copy around. */
+static int cmd_get(const char *partition_name, const char *pfs_path, const char *local_dest_path)
+{
+    if (mount_partition(partition_name) != 0)
+        return 1;
+
+    char src_path[512];
+    build_pfs_path(src_path, sizeof(src_path), pfs_path);
+
+    int retval = 0;
+    int in_file = iomanX_open(src_path, FIO_O_RDONLY, 0);
+    if (in_file >= 0) {
+        int out_file = open(local_dest_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (out_file >= 0) {
+            char buf[4096 * 16];
+            int len;
+            while ((len = iomanX_read(in_file, buf, sizeof(buf))) > 0) {
+                ssize_t written = write(out_file, buf, (size_t)len);
+                if (written != len) {
+                    fprintf(stderr, "(!) %s: write failed (wrote %zd of %d bytes)\n", local_dest_path, written, len);
+                    retval = 1;
+                    break;
+                }
+            }
+            if (len < 0) {
+                fprintf(stderr, "(!) %s: read failed with %d (%s)\n", src_path, len, strerror(-len));
+                retval = 1;
+            }
+            close(out_file);
+        } else {
+            fprintf(stderr, "(!) %s: %s\n", local_dest_path, strerror(errno));
+            retval = 1;
+        }
+        iomanX_close(in_file);
+    } else {
+        fprintf(stderr, "(!) %s: %s\n", src_path, strerror(-in_file));
+        retval = 1;
+    }
+
     unmount_partition();
     return retval;
 }
@@ -215,10 +272,11 @@ static void show_usage(const char *prog)
     fprintf(stderr,
             "Usage:\n"
             "  %s put <device> <partition> <destDir> <destFilename> <localSourcePath>\n"
+            "  %s get <device> <partition> <pfsPath> <localDestPath>\n"
             "  %s list <device> <partition> <path>\n"
             "  %s rm <device> <partition> <path>\n"
             "(destDir may be empty (\"\") for the partition root)\n",
-            prog, prog, prog);
+            prog, prog, prog, prog);
 }
 
 int main(int argc, char *argv[])
@@ -239,6 +297,14 @@ int main(int argc, char *argv[])
         if (init_device(argv[2]) != 0)
             return 1;
         result = cmd_put(argv[3], argv[4], argv[5], argv[6]);
+    } else if (strcmp(command, "get") == 0) {
+        if (argc != 6) {
+            show_usage(argv[0]);
+            return 1;
+        }
+        if (init_device(argv[2]) != 0)
+            return 1;
+        result = cmd_get(argv[3], argv[4], argv[5]);
     } else if (strcmp(command, "list") == 0) {
         if (argc != 5) {
             show_usage(argv[0]);

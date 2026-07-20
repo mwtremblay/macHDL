@@ -33,7 +33,7 @@ targets:
         PRODUCT_NAME: macHDL
         CODE_SIGN_ENTITLEMENTS: macHDL.entitlements
         GENERATE_INFOPLIST_FILE: YES
-        MARKETING_VERSION: "1.0.1"
+        MARKETING_VERSION: "1.0.2"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities

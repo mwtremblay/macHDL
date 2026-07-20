@@ -26,6 +26,10 @@ reimplementing the HDL/APA/PFS formats itself:
   `POPSTARTER.ELF`/`POPSLOADER.ELF`/`PATCH_5.BIN`, the loader that actually
   boots a PS1 game on the console.
 
+Cover art is fetched at runtime (never bundled) from
+[Luden02/psx-ps2-opl-art-database](https://github.com/Luden02/psx-ps2-opl-art-database),
+a community archive of the OPL Manager art database.
+
 ## Requirements
 
 - macOS 14 or later.
@@ -43,14 +47,25 @@ reimplementing the HDL/APA/PFS formats itself:
 
 - Lists all PS2 games on the drive, with per-game info.
 - Adds a new PS2 game from a CD/DVD image, with live install progress.
+- **Batch Add Games**: select multiple disc images at once; already-installed
+  games (matched by name) are skipped automatically.
 - Deletes a PS2 game.
+- Automatically creates a new overflow PFS partition (`__.POPS1`,
+  `__.POPS2`, ...) whenever the current PS1 games partition fills up —
+  transparent, no user action needed.
 - One-time PopStarter setup: creates the `__common` PFS partition and
   installs the required system files (prompting for the two Sony-copyrighted
   ones, auto-installing the rest).
 - Adds a PS1 game from a `.bin`/`.cue` pair (including "split" dumps with a
   separate `.bin` per track): converts it to `.VCD` via `cue2pops` (merging
-  split dumps first via `psx-vcd`), creates the `__.POPS` PFS partition if
+  split dumps first via `psx-vcd`), creates a `__.POPS` PFS partition if
   needed, and copies it onto the drive.
+- **Cover art**: fetches and installs cover art for both PS2 (via Open PS2
+  Loader's `+OPL` partition) and PS1 (via POPSLoader's `__common/POPS/ART`)
+  games from a community art archive, displayed in-app in a dedicated
+  preview pane. Fetches automatically on install (best-effort, never blocks
+  the install itself) plus an explicit "Fetch Artwork" action per game, and
+  a "Fetch All Artwork" bulk action for backfilling an entire library.
 - Refuses to operate on your Mac's own boot disk, checked independently by
   the privileged helper (not just a UI-level confirmation).
 
@@ -92,11 +107,14 @@ sudo launchctl kickstart -k system/com.michaeltremblay.machdl.helper
    from the sidebar.
 2. Approve the privileged helper and grant Full Disk Access when prompted
    (one-time setup).
-3. Use **Add Game** to install a PS2 game from a CD/DVD image, or select a
-   game and delete it from the list.
+3. Use **Add Game** to install a PS2 game from a CD/DVD image (or **Batch Add
+   Games** to install several at once), or select a game and delete it from
+   the list.
 4. For PS1 support: run **PopStarter Setup** once (supplying your own
    `POPS.ELF`/`IOPRP252.IMG`), then use **Add PS1 Game** to install games
    from `.bin`/`.cue` pairs.
+5. Use **Fetch Artwork** (per-game) or **Fetch All Artwork** (bulk) to pull
+   cover art for your library — it also fetches automatically on install.
 
 ## Distribution note
 

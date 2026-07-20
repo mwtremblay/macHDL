@@ -17,10 +17,25 @@ import Foundation
 /// uses. See project memory for the full incident.
 enum PFSDestinationPaths {
     /// The dedicated PFS partition holding every PS1 game's VCD, directly at
-    /// its root -- no per-game subdirectory. (PopStarter also recognizes
-    /// `__.POPS1` through `__.POPS10` as overflow partitions -- unused by
-    /// this app, everything goes in the single `__.POPS` partition.)
+    /// its root -- no per-game subdirectory. PopStarter also recognizes
+    /// `__.POPS1` through `__.POPS10` as overflow partitions -- PFS
+    /// partitions can't be resized in place (confirmed: pfsshell's full
+    /// command table has no resize/grow command), so once `__.POPS` fills
+    /// up, this app automatically creates and installs into the next
+    /// overflow partition rather than failing the install. See
+    /// `allGamesPartitionNamesInOrder` and `PS1GameService.
+    /// installGameWithOverflow`.
     static let gamesPartitionName = "__.POPS"
+
+    /// PopStarter's own documented overflow-partition cap.
+    static let maxGamesPartitionOverflowIndex = 10
+
+    /// `__.POPS`, then `__.POPS1` through `__.POPS10`, in the order this app
+    /// tries them (both for installing a new game and for enumerating
+    /// existing ones).
+    static var allGamesPartitionNamesInOrder: [String] {
+        [gamesPartitionName] + (1...maxGamesPartitionOverflowIndex).map { "\(gamesPartitionName)\($0)" }
+    }
 
     /// The dedicated PFS partition holding POPStarter's shared emulator
     /// binaries -- POPS.ELF/IOPRP252.IMG (Sony-copyrighted, user-supplied)
@@ -49,6 +64,70 @@ enum PFSDestinationPaths {
     /// to only matter for PopStarter's network modes, unused by this app).
     static let popsPakFilename = "POPS.PAK"
     static let popsIoxPakFilename = "POPS_IOX.PAK"
+
+    /// Open PS2 Loader's own dedicated PFS partition for its configuration,
+    /// game-list cache, and artwork -- entirely separate from `__common`/
+    /// `__.POPS`. Per OPL's own README: if `__common/OPL/conf_hdd.cfg`
+    /// doesn't specify a custom partition name, OPL auto-creates and uses a
+    /// 128MB PFS partition literally named `+OPL`. This app deliberately
+    /// targets only that literal name -- it does not read or write
+    /// `conf_hdd.cfg`, so a user who has already customized their OPL
+    /// partition name won't have artwork installed to the right place until
+    /// that's supported.
+    static let oplPartitionName = "+OPL"
+    static let oplArtSubdirectory = "ART"
+
+    /// PS2 cover art is keyed by Game ID (e.g. `SLES_544.39`), confirmed
+    /// against the official OPL docs (ps2homebrew.org/Open-PS2-Loader-User-
+    /// Guide/art.html): `<game_ID>_COV.{jpg|png}`. This app only ever writes
+    /// `.png`.
+    static func oplCoverArtFilename(forGameID gameID: String) -> String {
+        "\(gameID)_COV.png"
+    }
+
+    static func oplCoverArtPFSPath(forGameID gameID: String) -> String {
+        "\(oplArtSubdirectory)/\(oplCoverArtFilename(forGameID: gameID))"
+    }
+
+    /// PS1 cover art, unlike OPL's, is matched by exact VCD filename, not
+    /// Game ID -- confirmed verbatim from the POPSLoader README: "The PNG
+    /// filename must match the .VCD game filename." Lives inside the same
+    /// `__common/POPS/` folder already used for the system files above, in
+    /// its own `ART` subdirectory.
+    static var popsArtSubdirectory: String { "\(popsSubdirectory)/ART" }
+
+    static func popsCoverArtFilename(forVCDFilename vcdFilename: String) -> String {
+        var base = vcdFilename
+        if base.uppercased().hasSuffix(".VCD") {
+            base.removeLast(4)
+        }
+        return base + ".png"
+    }
+
+    static func popsCoverArtPFSPath(forVCDFilename vcdFilename: String) -> String {
+        "\(popsArtSubdirectory)/\(popsCoverArtFilename(forVCDFilename: vcdFilename))"
+    }
+
+    /// A tiny plain-text sidecar (just the detected Game ID, e.g.
+    /// "SLUS_123.45") stored alongside a PS1 game's cover art. PS1GameID-
+    /// Detector's byte-pattern scan needs the original .cue/.bin, which this
+    /// app doesn't retain after install -- storing the ID once it's detected
+    /// (at install time, or the first time it's manually detected) means
+    /// later artwork fetches for the same game never need the source disc
+    /// image re-selected again. Lives on the drive itself (not a local Mac
+    /// cache) so it travels with the drive across machines, matching this
+    /// app's existing everything-lives-on-the-drive design.
+    static func popsGameIDSidecarFilename(forVCDFilename vcdFilename: String) -> String {
+        var base = vcdFilename
+        if base.uppercased().hasSuffix(".VCD") {
+            base.removeLast(4)
+        }
+        return base + ".gameid"
+    }
+
+    static func popsGameIDSidecarPFSPath(forVCDFilename vcdFilename: String) -> String {
+        "\(popsArtSubdirectory)/\(popsGameIDSidecarFilename(forVCDFilename: vcdFilename))"
+    }
 
     /// POPStarter (not POPSLoader) enforces this as a hard cap on the VCD
     /// filename -- confirmed in the POPSLoader README's Troubleshooting
