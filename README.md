@@ -49,8 +49,8 @@ reimplementing the HDL/APA/PFS formats itself:
 ## Building
 
 ```bash
-git clone --recurse-submodules <this-repo-url>
-cd mac-hdl-gui
+git clone --recurse-submodules git@github.com:mwtremblay/macHDL.git
+cd macHDL
 brew install xcodegen meson ninja
 xcodegen generate
 open mac-hdl-gui.xcodeproj
