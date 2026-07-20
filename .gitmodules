@@ -1,0 +1,9 @@
+[submodule "Vendor/hdl-dump"]
+	path = Vendor/hdl-dump
+	url = https://github.com/ps2homebrew/hdl-dump.git
+[submodule "Vendor/pfsshell"]
+	path = Vendor/pfsshell
+	url = https://github.com/ps2homebrew/pfsshell.git
+[submodule "Vendor/cue2pops-mac"]
+	path = Vendor/cue2pops-mac
+	url = https://github.com/ErikAndren/cue2pops-mac.git

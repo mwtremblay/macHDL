@@ -1,0 +1,855 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0AC8EC4D3D517A9D21A70D27 /* HDLDumpError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7A379BC3F3CD2E63DA65FA /* HDLDumpError.swift */; };
+		121C3929D6E4B841927ABCC2 /* PopStarterSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC34C4AC52FAA4AE50027A38 /* PopStarterSetupViewModel.swift */; };
+		1ECB66C2E21B6DFD0A8BE811 /* IdentifiableError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 199508D2F88BE350E0CDB8AC /* IdentifiableError.swift */; };
+		22F3211020A889D8A1DBEBCA /* PopStarterSetupSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A42988792CB9A7F6EB5977 /* PopStarterSetupSheet.swift */; };
+		242A4BA0502887AE8E0FED29 /* GameInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399733C861D2609DA2C34084 /* GameInfoSheet.swift */; };
+		25CB3A785B81ACEE1F59CF85 /* CSVGameListParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0456E9ED588392536D7E2D /* CSVGameListParserTests.swift */; };
+		2D2340C7DEC399496607972D /* POPSLOADER.ELF in Resources */ = {isa = PBXBuildFile; fileRef = 584A0E46157E1C3592338380 /* POPSLOADER.ELF */; };
+		3B28E6755302464D7DB1EC6D /* PFSDestinationPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658D48D918DC95EB8EECCD5B /* PFSDestinationPaths.swift */; };
+		47A7664C00839347D1AC4C9D /* POPSTARTER.ELF in Resources */ = {isa = PBXBuildFile; fileRef = 2451D8A7FA5CFC315045505E /* POPSTARTER.ELF */; };
+		48BF563B3CB9269889A899FB /* HelperRegistrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9955E0A95BBCF512EB90C6 /* HelperRegistrationViewModel.swift */; };
+		5C6172BD898949136A5E2B47 /* HelperApprovalSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E91D04524CA27B9897CCA1 /* HelperApprovalSheet.swift */; };
+		5D8AE421DBDB3605F2D686F1 /* PFSShellSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C93FDD2C149514C07585DC /* PFSShellSession.swift */; };
+		5E9C57B99A5D5C611AEE454C /* HelperProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952CDC1B811CDF4B29F6A4F0 /* HelperProcessRunner.swift */; };
+		611469E790B63EBC0750337D /* HDLDumpHelperListenerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C99A53EF71A3E0F1B5DEA /* HDLDumpHelperListenerDelegate.swift */; };
+		6DBEDEA983BEE1754E4D65B4 /* AddPS1GameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E9E4628A4D3283B48FA9D1 /* AddPS1GameSheet.swift */; };
+		730DA767F4FA8DD88BDBF867 /* HDLGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A192C03D414DD1C76BCDD58 /* HDLGame.swift */; };
+		7CE33C76AC5587CD5CC03257 /* PFSPartitionSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */; };
+		7EB54B2FFE819DC1330F1606 /* HDLDumpHelperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6F0B9036D6D4ED794B232E /* HDLDumpHelperService.swift */; };
+		8143E4BE8EEB2FB76A2DCC0B /* PFSPartitionSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */; };
+		81660DC4F303CAD3027E275C /* PS1GameConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E888622D091761D14693EBAE /* PS1GameConverter.swift */; };
+		8BDBBD3964B562170AF7BEF9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B686ADB794ED7D53C1A3293E /* Assets.xcassets */; };
+		8C1100B5E183BC96A3671331 /* InstallPS1GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12D9CA7E69FC23739CA81C2E /* InstallPS1GameViewModel.swift */; };
+		8CAC9326794FEA403135E065 /* PS1GameListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E52FA2C606405F592BE2F7 /* PS1GameListViewModel.swift */; };
+		8E0298274EF91F344B38AEF4 /* AddGameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 579B976170D7F51A5D8CB9A3 /* AddGameSheet.swift */; };
+		92F56FE931CC6868095122F6 /* PATCH_5.BIN in Resources */ = {isa = PBXBuildFile; fileRef = B9860A769EF08636BCBF1CC2 /* PATCH_5.BIN */; };
+		9932C575E08D0FAF22C03F0B /* HDLDumpProgressParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECFC1DFC466A04ADAD00B83 /* HDLDumpProgressParserTests.swift */; };
+		998654CB5D1F4A1868B3ECCA /* HDLDumpBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84FFE9ACB269F111E1F5C94 /* HDLDumpBinaryLocator.swift */; };
+		9D4ACF2E61E926325EE3CE6A /* HDLDumpHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800538CDE2FB45E533D8F32A /* HDLDumpHelperProtocol.swift */; };
+		9DF617705C7A31D1311FA3A0 /* Disk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D2B93C6850590FA3466325D /* Disk.swift */; };
+		9F0E44DBA09F71F8A75F08DC /* GameListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18ACEA360378119CE30303C /* GameListViewModel.swift */; };
+		9F5D205AFDCF3FE219AF6215 /* DriveSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23442CD85DC7A79F268C09F9 /* DriveSidebarView.swift */; };
+		A431DB4CAE302CE3D7A70F35 /* FullDiskAccessSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75065051A670A11156987AF9 /* FullDiskAccessSheet.swift */; };
+		AA5969B017184B43258383F3 /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3087C2C9ABB55A32703518A7 /* GameListView.swift */; };
+		B8776D21F6155FDDCFFCB7A1 /* ProgressSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC3C7BABBE8D10AED0B8310 /* ProgressSheet.swift */; };
+		C5661D28C4FFC48C5A840D7A /* HDLDumpProgressParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1F299F181C9ACD10ECAEEC /* HDLDumpProgressParser.swift */; };
+		C738FEF07A895D53E88C361C /* HDLDumpHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800538CDE2FB45E533D8F32A /* HDLDumpHelperProtocol.swift */; };
+		C9C3515DC237CAAC4D81DDF9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAD1E737157680B11450F5BF /* main.swift */; };
+		CA14A544AF978B46817D9AAD /* HelperToolBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C540F0737520150AD5BCC25 /* HelperToolBinaryLocator.swift */; };
+		CA6F5B346F6B873F70315DAC /* HDLDumpHelperClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A149988A4470B2C5147A4C9F /* HDLDumpHelperClient.swift */; };
+		D58CFB70ED40559EA3193AB9 /* HDLDumpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DF948E16FE98BEDC0372D5 /* HDLDumpService.swift */; };
+		D764781C12D6FE7C24EFE532 /* Cue2PopsBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD743AF67D82E30D0A8BA6A /* Cue2PopsBinaryLocator.swift */; };
+		D7B836691717E5EEEEA01727 /* DriveListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174F959DEBAD91E51DDE30D9 /* DriveListViewModel.swift */; };
+		DC97D964B04BBFD456B09511 /* PFSPartitionSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232941A22BA34E7590AFEBB0 /* PFSPartitionSizingTests.swift */; };
+		E103937CF22B89F9D2543C5F /* PS1Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = B243306A82BFC5410860C036 /* PS1Game.swift */; };
+		E4A5B954AE3155EF9550FC09 /* DiskDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */; };
+		E565BC0248DB15AAEBC1476B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1084A7F21F697B39B90B391 /* ContentView.swift */; };
+		ED2A311A17CFF651A03873AC /* InstallGameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B894DA99F86C2155D5CB0C88 /* InstallGameViewModel.swift */; };
+		F11F45195F9C19FE1BEA1B13 /* PS1GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE7CD2FE31A40D6E072AD40 /* PS1GameListView.swift */; };
+		F723A2AEFFB33F70ADC6D1E4 /* macHDLApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E5C3F6C14AA9881298F711 /* macHDLApp.swift */; };
+		FABBAA3CB3655F23E7EA32AB /* CSVGameListParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F32620DAB775D5EA9F512FA0 /* CSVGameListParser.swift */; };
+		FFB8F4EEBEDD600EFADF12F0 /* PS1GameService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CABE17F5DDFE707904CEFE /* PS1GameService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		60961C3440E5E5CC367F64C9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0D2CF7EB43FBC3F08B1457E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6AC2FA5C081A2AEC6952D20D;
+			remoteInfo = "mac-hdl-gui-helper";
+		};
+		F6DC785B8A660232353157D7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0D2CF7EB43FBC3F08B1457E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 114AC74925D75BAAC74CEA02;
+			remoteInfo = "mac-hdl-gui";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		12D9CA7E69FC23739CA81C2E /* InstallPS1GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallPS1GameViewModel.swift; sourceTree = "<group>"; };
+		174F959DEBAD91E51DDE30D9 /* DriveListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveListViewModel.swift; sourceTree = "<group>"; };
+		199508D2F88BE350E0CDB8AC /* IdentifiableError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifiableError.swift; sourceTree = "<group>"; };
+		232941A22BA34E7590AFEBB0 /* PFSPartitionSizingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSPartitionSizingTests.swift; sourceTree = "<group>"; };
+		23442CD85DC7A79F268C09F9 /* DriveSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveSidebarView.swift; sourceTree = "<group>"; };
+		23E9E4628A4D3283B48FA9D1 /* AddPS1GameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPS1GameSheet.swift; sourceTree = "<group>"; };
+		2451D8A7FA5CFC315045505E /* POPSTARTER.ELF */ = {isa = PBXFileReference; path = POPSTARTER.ELF; sourceTree = "<group>"; };
+		2D2B93C6850590FA3466325D /* Disk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disk.swift; sourceTree = "<group>"; };
+		3087C2C9ABB55A32703518A7 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
+		399733C861D2609DA2C34084 /* GameInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameInfoSheet.swift; sourceTree = "<group>"; };
+		4BD743AF67D82E30D0A8BA6A /* Cue2PopsBinaryLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cue2PopsBinaryLocator.swift; sourceTree = "<group>"; };
+		4C540F0737520150AD5BCC25 /* HelperToolBinaryLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperToolBinaryLocator.swift; sourceTree = "<group>"; };
+		53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSPartitionSizing.swift; sourceTree = "<group>"; };
+		53DF948E16FE98BEDC0372D5 /* HDLDumpService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpService.swift; sourceTree = "<group>"; };
+		579B976170D7F51A5D8CB9A3 /* AddGameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddGameSheet.swift; sourceTree = "<group>"; };
+		584A0E46157E1C3592338380 /* POPSLOADER.ELF */ = {isa = PBXFileReference; path = POPSLOADER.ELF; sourceTree = "<group>"; };
+		658D48D918DC95EB8EECCD5B /* PFSDestinationPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSDestinationPaths.swift; sourceTree = "<group>"; };
+		6A192C03D414DD1C76BCDD58 /* HDLGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLGame.swift; sourceTree = "<group>"; };
+		6ECFC1DFC466A04ADAD00B83 /* HDLDumpProgressParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpProgressParserTests.swift; sourceTree = "<group>"; };
+		6FE7CD2FE31A40D6E072AD40 /* PS1GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameListView.swift; sourceTree = "<group>"; };
+		75065051A670A11156987AF9 /* FullDiskAccessSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullDiskAccessSheet.swift; sourceTree = "<group>"; };
+		7853284AB816BF9F4EC91153 /* mac-hdl-gui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "mac-hdl-gui.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		800538CDE2FB45E533D8F32A /* HDLDumpHelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperProtocol.swift; sourceTree = "<group>"; };
+		90E0228B754EAC4CEA85A1FE /* mac-hdl-gui-helper */ = {isa = PBXFileReference; includeInIndex = 0; path = "mac-hdl-gui-helper"; sourceTree = BUILT_PRODUCTS_DIR; };
+		93E91D04524CA27B9897CCA1 /* HelperApprovalSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperApprovalSheet.swift; sourceTree = "<group>"; };
+		952CDC1B811CDF4B29F6A4F0 /* HelperProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperProcessRunner.swift; sourceTree = "<group>"; };
+		96CABE17F5DDFE707904CEFE /* PS1GameService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameService.swift; sourceTree = "<group>"; };
+		9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskDiscoveryService.swift; sourceTree = "<group>"; };
+		A1084A7F21F697B39B90B391 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A149988A4470B2C5147A4C9F /* HDLDumpHelperClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperClient.swift; sourceTree = "<group>"; };
+		AE1F299F181C9ACD10ECAEEC /* HDLDumpProgressParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpProgressParser.swift; sourceTree = "<group>"; };
+		B243306A82BFC5410860C036 /* PS1Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1Game.swift; sourceTree = "<group>"; };
+		B686ADB794ED7D53C1A3293E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B6E52FA2C606405F592BE2F7 /* PS1GameListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameListViewModel.swift; sourceTree = "<group>"; };
+		B7A42988792CB9A7F6EB5977 /* PopStarterSetupSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopStarterSetupSheet.swift; sourceTree = "<group>"; };
+		B7E5C3F6C14AA9881298F711 /* macHDLApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macHDLApp.swift; sourceTree = "<group>"; };
+		B894DA99F86C2155D5CB0C88 /* InstallGameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallGameViewModel.swift; sourceTree = "<group>"; };
+		B9860A769EF08636BCBF1CC2 /* PATCH_5.BIN */ = {isa = PBXFileReference; path = PATCH_5.BIN; sourceTree = "<group>"; };
+		BF9955E0A95BBCF512EB90C6 /* HelperRegistrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperRegistrationViewModel.swift; sourceTree = "<group>"; };
+		C84FFE9ACB269F111E1F5C94 /* HDLDumpBinaryLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpBinaryLocator.swift; sourceTree = "<group>"; };
+		CA01537C8C1C8BBB45CB4753 /* mac-hdl-guiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "mac-hdl-guiTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA7A379BC3F3CD2E63DA65FA /* HDLDumpError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpError.swift; sourceTree = "<group>"; };
+		CC6F0B9036D6D4ED794B232E /* HDLDumpHelperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperService.swift; sourceTree = "<group>"; };
+		CCC3C7BABBE8D10AED0B8310 /* ProgressSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSheet.swift; sourceTree = "<group>"; };
+		D18ACEA360378119CE30303C /* GameListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListViewModel.swift; sourceTree = "<group>"; };
+		DAD1E737157680B11450F5BF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		DC34C4AC52FAA4AE50027A38 /* PopStarterSetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopStarterSetupViewModel.swift; sourceTree = "<group>"; };
+		DD0C99A53EF71A3E0F1B5DEA /* HDLDumpHelperListenerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperListenerDelegate.swift; sourceTree = "<group>"; };
+		E1C93FDD2C149514C07585DC /* PFSShellSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSShellSession.swift; sourceTree = "<group>"; };
+		E888622D091761D14693EBAE /* PS1GameConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameConverter.swift; sourceTree = "<group>"; };
+		EC0456E9ED588392536D7E2D /* CSVGameListParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVGameListParserTests.swift; sourceTree = "<group>"; };
+		F32620DAB775D5EA9F512FA0 /* CSVGameListParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVGameListParser.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1B69AC9449900CC95E1C4D55 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				2D2B93C6850590FA3466325D /* Disk.swift */,
+				6A192C03D414DD1C76BCDD58 /* HDLGame.swift */,
+				199508D2F88BE350E0CDB8AC /* IdentifiableError.swift */,
+				658D48D918DC95EB8EECCD5B /* PFSDestinationPaths.swift */,
+				B243306A82BFC5410860C036 /* PS1Game.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		22839F542A9F5CF8F72F5400 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				579B976170D7F51A5D8CB9A3 /* AddGameSheet.swift */,
+				23E9E4628A4D3283B48FA9D1 /* AddPS1GameSheet.swift */,
+				A1084A7F21F697B39B90B391 /* ContentView.swift */,
+				23442CD85DC7A79F268C09F9 /* DriveSidebarView.swift */,
+				75065051A670A11156987AF9 /* FullDiskAccessSheet.swift */,
+				399733C861D2609DA2C34084 /* GameInfoSheet.swift */,
+				3087C2C9ABB55A32703518A7 /* GameListView.swift */,
+				93E91D04524CA27B9897CCA1 /* HelperApprovalSheet.swift */,
+				B7A42988792CB9A7F6EB5977 /* PopStarterSetupSheet.swift */,
+				CCC3C7BABBE8D10AED0B8310 /* ProgressSheet.swift */,
+				6FE7CD2FE31A40D6E072AD40 /* PS1GameListView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		369D057FE7F877AA94502DDF /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				800538CDE2FB45E533D8F32A /* HDLDumpHelperProtocol.swift */,
+				53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		60506E9F4336A35588C9602B /* HelperTool */ = {
+			isa = PBXGroup;
+			children = (
+				DD0C99A53EF71A3E0F1B5DEA /* HDLDumpHelperListenerDelegate.swift */,
+				CC6F0B9036D6D4ED794B232E /* HDLDumpHelperService.swift */,
+				952CDC1B811CDF4B29F6A4F0 /* HelperProcessRunner.swift */,
+				4C540F0737520150AD5BCC25 /* HelperToolBinaryLocator.swift */,
+				DAD1E737157680B11450F5BF /* main.swift */,
+				E1C93FDD2C149514C07585DC /* PFSShellSession.swift */,
+			);
+			path = HelperTool;
+			sourceTree = "<group>";
+		};
+		86610D357ED62F2717756136 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				90E0228B754EAC4CEA85A1FE /* mac-hdl-gui-helper */,
+				7853284AB816BF9F4EC91153 /* mac-hdl-gui.app */,
+				CA01537C8C1C8BBB45CB4753 /* mac-hdl-guiTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		96AC829B09E431A414B0939B /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				F32620DAB775D5EA9F512FA0 /* CSVGameListParser.swift */,
+				4BD743AF67D82E30D0A8BA6A /* Cue2PopsBinaryLocator.swift */,
+				9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */,
+				C84FFE9ACB269F111E1F5C94 /* HDLDumpBinaryLocator.swift */,
+				CA7A379BC3F3CD2E63DA65FA /* HDLDumpError.swift */,
+				A149988A4470B2C5147A4C9F /* HDLDumpHelperClient.swift */,
+				AE1F299F181C9ACD10ECAEEC /* HDLDumpProgressParser.swift */,
+				53DF948E16FE98BEDC0372D5 /* HDLDumpService.swift */,
+				E888622D091761D14693EBAE /* PS1GameConverter.swift */,
+				96CABE17F5DDFE707904CEFE /* PS1GameService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B1345D1829529CEFF7E19D86 /* popstarter */ = {
+			isa = PBXGroup;
+			children = (
+				B9860A769EF08636BCBF1CC2 /* PATCH_5.BIN */,
+				584A0E46157E1C3592338380 /* POPSLOADER.ELF */,
+				2451D8A7FA5CFC315045505E /* POPSTARTER.ELF */,
+			);
+			name = popstarter;
+			path = Vendor/popstarter;
+			sourceTree = "<group>";
+		};
+		CDEAA9735AF9D3E0F534A360 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				174F959DEBAD91E51DDE30D9 /* DriveListViewModel.swift */,
+				D18ACEA360378119CE30303C /* GameListViewModel.swift */,
+				BF9955E0A95BBCF512EB90C6 /* HelperRegistrationViewModel.swift */,
+				B894DA99F86C2155D5CB0C88 /* InstallGameViewModel.swift */,
+				12D9CA7E69FC23739CA81C2E /* InstallPS1GameViewModel.swift */,
+				DC34C4AC52FAA4AE50027A38 /* PopStarterSetupViewModel.swift */,
+				B6E52FA2C606405F592BE2F7 /* PS1GameListViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		D609008198BE1D0339A9D6A3 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				EC0456E9ED588392536D7E2D /* CSVGameListParserTests.swift */,
+				6ECFC1DFC466A04ADAD00B83 /* HDLDumpProgressParserTests.swift */,
+				232941A22BA34E7590AFEBB0 /* PFSPartitionSizingTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		DAE5D669697515298ECECD51 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B686ADB794ED7D53C1A3293E /* Assets.xcassets */,
+				B7E5C3F6C14AA9881298F711 /* macHDLApp.swift */,
+				1B69AC9449900CC95E1C4D55 /* Models */,
+				96AC829B09E431A414B0939B /* Services */,
+				369D057FE7F877AA94502DDF /* Shared */,
+				CDEAA9735AF9D3E0F534A360 /* ViewModels */,
+				22839F542A9F5CF8F72F5400 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		FEB9FC412359E5950CF002EA = {
+			isa = PBXGroup;
+			children = (
+				60506E9F4336A35588C9602B /* HelperTool */,
+				B1345D1829529CEFF7E19D86 /* popstarter */,
+				DAE5D669697515298ECECD51 /* Sources */,
+				D609008198BE1D0339A9D6A3 /* Tests */,
+				86610D357ED62F2717756136 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		114AC74925D75BAAC74CEA02 /* mac-hdl-gui */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 16226D4439D0BCF329B15B06 /* Build configuration list for PBXNativeTarget "mac-hdl-gui" */;
+			buildPhases = (
+				C3F2A7089F716E6B68C6D8D3 /* Build & Embed hdl_dump */,
+				D3FFEAE972A86370C22D5D1A /* Build & Embed pfsshell */,
+				91CBD3EB1BE5F80FED3F296E /* Build & Embed cue2pops */,
+				49AB31BCB3DABB632758A9C4 /* Sources */,
+				AA68662B0310009976A99C8D /* Embed Privileged Helper */,
+				468FB924CB6A81520D06EF30 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0E68A2928228F90CB77B32A /* PBXTargetDependency */,
+			);
+			name = "mac-hdl-gui";
+			packageProductDependencies = (
+			);
+			productName = "mac-hdl-gui";
+			productReference = 7853284AB816BF9F4EC91153 /* mac-hdl-gui.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6AC2FA5C081A2AEC6952D20D /* mac-hdl-gui-helper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE5A18C43DD65EFFDF1F209B /* Build configuration list for PBXNativeTarget "mac-hdl-gui-helper" */;
+			buildPhases = (
+				3F1EFA4B60ADCB1E286D73ED /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "mac-hdl-gui-helper";
+			packageProductDependencies = (
+			);
+			productName = "mac-hdl-gui-helper";
+			productReference = 90E0228B754EAC4CEA85A1FE /* mac-hdl-gui-helper */;
+			productType = "com.apple.product-type.tool";
+		};
+		A51DAAC67C0A6ACAEE0F89A4 /* mac-hdl-guiTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF66AC910B8D4A6911F14593 /* Build configuration list for PBXNativeTarget "mac-hdl-guiTests" */;
+			buildPhases = (
+				FB17359FD0790CA27D109B75 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F98222E7A99660C013E6A7B2 /* PBXTargetDependency */,
+			);
+			name = "mac-hdl-guiTests";
+			packageProductDependencies = (
+			);
+			productName = "mac-hdl-guiTests";
+			productReference = CA01537C8C1C8BBB45CB4753 /* mac-hdl-guiTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E0D2CF7EB43FBC3F08B1457E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					114AC74925D75BAAC74CEA02 = {
+						DevelopmentTeam = 7QW68VQ33R;
+						ProvisioningStyle = Automatic;
+					};
+					6AC2FA5C081A2AEC6952D20D = {
+						DevelopmentTeam = 7QW68VQ33R;
+						ProvisioningStyle = Automatic;
+					};
+					A51DAAC67C0A6ACAEE0F89A4 = {
+						DevelopmentTeam = 7QW68VQ33R;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9DF5991EBC4D55C9A8A7E573 /* Build configuration list for PBXProject "mac-hdl-gui" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FEB9FC412359E5950CF002EA;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 86610D357ED62F2717756136 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				114AC74925D75BAAC74CEA02 /* mac-hdl-gui */,
+				6AC2FA5C081A2AEC6952D20D /* mac-hdl-gui-helper */,
+				A51DAAC67C0A6ACAEE0F89A4 /* mac-hdl-guiTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		468FB924CB6A81520D06EF30 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8BDBBD3964B562170AF7BEF9 /* Assets.xcassets in Resources */,
+				92F56FE931CC6868095122F6 /* PATCH_5.BIN in Resources */,
+				2D2340C7DEC399496607972D /* POPSLOADER.ELF in Resources */,
+				47A7664C00839347D1AC4C9D /* POPSTARTER.ELF in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		91CBD3EB1BE5F80FED3F296E /* Build & Embed cue2pops */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Vendor/cue2pops-mac/cue2pops.c",
+				"$(SRCROOT)/Vendor/cue2pops-mac/Makefile",
+			);
+			name = "Build & Embed cue2pops";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Resources/cue2pops-bin/cue2pops",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/build-cue2pops.sh\"\n";
+		};
+		AA68662B0310009976A99C8D /* Embed Privileged Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/com.michaeltremblay.machdl.helper",
+				"$(SRCROOT)/HelperTool/com.michaeltremblay.machdl.helper.plist",
+			);
+			name = "Embed Privileged Helper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Library/HelperTools/com.michaeltremblay.machdl.helper",
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Library/LaunchDaemons/com.michaeltremblay.machdl.helper.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/embed-helper.sh\"\n";
+		};
+		C3F2A7089F716E6B68C6D8D3 /* Build & Embed hdl_dump */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Vendor/hdl-dump/hdl_dump.c",
+				"$(SRCROOT)/Vendor/hdl-dump/Makefile",
+				"$(SRCROOT)/Vendor/hdl-dump-macos.patch",
+			);
+			name = "Build & Embed hdl_dump";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Resources/hdl-dump-bin/hdl_dump",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/build-hdl-dump.sh\"\n";
+		};
+		D3FFEAE972A86370C22D5D1A /* Build & Embed pfsshell */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Vendor/pfsshell/meson.build",
+				"$(SRCROOT)/Vendor/pfsshell-pfsutil.patch",
+				"$(SRCROOT)/Scripts/pfsutil-src/pfsutil.c",
+			);
+			name = "Build & Embed pfsshell";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Resources/pfsshell-bin/pfsshell",
+				"$(CODESIGNING_FOLDER_PATH)/Contents/Resources/pfsshell-bin/pfsutil",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/build-pfsshell.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3F1EFA4B60ADCB1E286D73ED /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				611469E790B63EBC0750337D /* HDLDumpHelperListenerDelegate.swift in Sources */,
+				C738FEF07A895D53E88C361C /* HDLDumpHelperProtocol.swift in Sources */,
+				7EB54B2FFE819DC1330F1606 /* HDLDumpHelperService.swift in Sources */,
+				5E9C57B99A5D5C611AEE454C /* HelperProcessRunner.swift in Sources */,
+				CA14A544AF978B46817D9AAD /* HelperToolBinaryLocator.swift in Sources */,
+				8143E4BE8EEB2FB76A2DCC0B /* PFSPartitionSizing.swift in Sources */,
+				5D8AE421DBDB3605F2D686F1 /* PFSShellSession.swift in Sources */,
+				C9C3515DC237CAAC4D81DDF9 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		49AB31BCB3DABB632758A9C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E0298274EF91F344B38AEF4 /* AddGameSheet.swift in Sources */,
+				6DBEDEA983BEE1754E4D65B4 /* AddPS1GameSheet.swift in Sources */,
+				FABBAA3CB3655F23E7EA32AB /* CSVGameListParser.swift in Sources */,
+				E565BC0248DB15AAEBC1476B /* ContentView.swift in Sources */,
+				D764781C12D6FE7C24EFE532 /* Cue2PopsBinaryLocator.swift in Sources */,
+				9DF617705C7A31D1311FA3A0 /* Disk.swift in Sources */,
+				E4A5B954AE3155EF9550FC09 /* DiskDiscoveryService.swift in Sources */,
+				D7B836691717E5EEEEA01727 /* DriveListViewModel.swift in Sources */,
+				9F5D205AFDCF3FE219AF6215 /* DriveSidebarView.swift in Sources */,
+				A431DB4CAE302CE3D7A70F35 /* FullDiskAccessSheet.swift in Sources */,
+				242A4BA0502887AE8E0FED29 /* GameInfoSheet.swift in Sources */,
+				AA5969B017184B43258383F3 /* GameListView.swift in Sources */,
+				9F0E44DBA09F71F8A75F08DC /* GameListViewModel.swift in Sources */,
+				998654CB5D1F4A1868B3ECCA /* HDLDumpBinaryLocator.swift in Sources */,
+				0AC8EC4D3D517A9D21A70D27 /* HDLDumpError.swift in Sources */,
+				CA6F5B346F6B873F70315DAC /* HDLDumpHelperClient.swift in Sources */,
+				9D4ACF2E61E926325EE3CE6A /* HDLDumpHelperProtocol.swift in Sources */,
+				C5661D28C4FFC48C5A840D7A /* HDLDumpProgressParser.swift in Sources */,
+				D58CFB70ED40559EA3193AB9 /* HDLDumpService.swift in Sources */,
+				730DA767F4FA8DD88BDBF867 /* HDLGame.swift in Sources */,
+				5C6172BD898949136A5E2B47 /* HelperApprovalSheet.swift in Sources */,
+				48BF563B3CB9269889A899FB /* HelperRegistrationViewModel.swift in Sources */,
+				1ECB66C2E21B6DFD0A8BE811 /* IdentifiableError.swift in Sources */,
+				ED2A311A17CFF651A03873AC /* InstallGameViewModel.swift in Sources */,
+				8C1100B5E183BC96A3671331 /* InstallPS1GameViewModel.swift in Sources */,
+				3B28E6755302464D7DB1EC6D /* PFSDestinationPaths.swift in Sources */,
+				7CE33C76AC5587CD5CC03257 /* PFSPartitionSizing.swift in Sources */,
+				E103937CF22B89F9D2543C5F /* PS1Game.swift in Sources */,
+				81660DC4F303CAD3027E275C /* PS1GameConverter.swift in Sources */,
+				F11F45195F9C19FE1BEA1B13 /* PS1GameListView.swift in Sources */,
+				8CAC9326794FEA403135E065 /* PS1GameListViewModel.swift in Sources */,
+				FFB8F4EEBEDD600EFADF12F0 /* PS1GameService.swift in Sources */,
+				22F3211020A889D8A1DBEBCA /* PopStarterSetupSheet.swift in Sources */,
+				121C3929D6E4B841927ABCC2 /* PopStarterSetupViewModel.swift in Sources */,
+				B8776D21F6155FDDCFFCB7A1 /* ProgressSheet.swift in Sources */,
+				F723A2AEFFB33F70ADC6D1E4 /* macHDLApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FB17359FD0790CA27D109B75 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				25CB3A785B81ACEE1F59CF85 /* CSVGameListParserTests.swift in Sources */,
+				9932C575E08D0FAF22C03F0B /* HDLDumpProgressParserTests.swift in Sources */,
+				DC97D964B04BBFD456B09511 /* PFSPartitionSizingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0E68A2928228F90CB77B32A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6AC2FA5C081A2AEC6952D20D /* mac-hdl-gui-helper */;
+			targetProxy = 60961C3440E5E5CC367F64C9 /* PBXContainerItemProxy */;
+		};
+		F98222E7A99660C013E6A7B2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 114AC74925D75BAAC74CEA02 /* mac-hdl-gui */;
+			targetProxy = F6DC785B8A660232353157D7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		204C024594825E3C48E791E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaeltremblay.machdl.helper;
+				PRODUCT_NAME = com.michaeltremblay.machdl.helper;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		46DD4D965D61E685126C45C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = macHDL.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaeltremblay.machdl;
+				PRODUCT_NAME = macHDL;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		5E5169AAEC50A81E5051CEE4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = macHDL.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaeltremblay.machdl;
+				PRODUCT_NAME = macHDL;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		7D937A658A77E0544FEAAD41 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7QW68VQ33R;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9C7F075475FE356DE6FA984E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaeltremblay.machdl.helper;
+				PRODUCT_NAME = com.michaeltremblay.machdl.helper;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		CC6092AAC893FC1FCE8AA4E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7QW68VQ33R;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D5652B54D29D7E67849079FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.michaeltremblay.mac-hdl-guiTests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/macHDL.app/Contents/MacOS/macHDL";
+			};
+			name = Release;
+		};
+		F46C16F43484419D81D293E3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.michaeltremblay.mac-hdl-guiTests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/macHDL.app/Contents/MacOS/macHDL";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		16226D4439D0BCF329B15B06 /* Build configuration list for PBXNativeTarget "mac-hdl-gui" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E5169AAEC50A81E5051CEE4 /* Debug */,
+				46DD4D965D61E685126C45C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9DF5991EBC4D55C9A8A7E573 /* Build configuration list for PBXProject "mac-hdl-gui" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D937A658A77E0544FEAAD41 /* Debug */,
+				CC6092AAC893FC1FCE8AA4E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CE5A18C43DD65EFFDF1F209B /* Build configuration list for PBXNativeTarget "mac-hdl-gui-helper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C7F075475FE356DE6FA984E /* Debug */,
+				204C024594825E3C48E791E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EF66AC910B8D4A6911F14593 /* Build configuration list for PBXNativeTarget "mac-hdl-guiTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F46C16F43484419D81D293E3 /* Debug */,
+				D5652B54D29D7E67849079FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E0D2CF7EB43FBC3F08B1457E /* Project object */;
+}

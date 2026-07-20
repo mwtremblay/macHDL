@@ -1,0 +1,265 @@
+/* pfsutil -- a one-shot, argv-based CLI for PFS partition file operations,
+ * built on top of the same apa/pfs/iomanX libraries pfsshell itself uses
+ * (see meson.build). Written for mac-hdl-gui specifically to replace
+ * driving pfsshell's interactive REPL over a pty, which proved fragile in
+ * production (stdio buffering, argv-tokenizer quoting, prompt detection --
+ * see project notes). Modeled directly on pfs2tar.c's proven pattern in
+ * this same source tree: call _init_apa/_init_pfs/_init_hdlfs and check
+ * their return codes explicitly (they return negative errno-style codes on
+ * failure, they do not call exit() themselves -- only shell.c's own
+ * do_device() REPL wrapper chooses to exit(1) on failure, which pfs2tar.c
+ * does not do and neither does this file).
+ *
+ * Every subcommand does its own device-init + mount + operation + umount in
+ * one process invocation and returns a real exit code (0 = success, nonzero
+ * = failure) with a human-readable message on stderr -- no REPL, no prompt
+ * text to parse.
+ */
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "iomanX_port.h"
+
+#define IOMANX_MOUNT_POINT "pfs0:"
+
+/* where (image of) PS2 HDD is; in fakeps2sdk/atad.c */
+extern void set_atad_device_path(const char *path);
+extern void atad_close(void);
+
+static int init_device(const char *device_path)
+{
+    set_atad_device_path(device_path);
+
+    /* Mirrors shell.c's do_device() exactly -- these args are already
+     * proven correct throughout this project against real hardware. */
+    static const char *apa_args[] = {"ps2hdd.irx", NULL};
+    int result = _init_apa(1, (char **)apa_args);
+    if (result < 0) {
+        fprintf(stderr, "(!) init_apa: failed with %d (%s)\n", result, strerror(-result));
+        return -1;
+    }
+
+    static const char *pfs_args[] = {"pfs.irx", "-m", "1", "-o", "1", "-n", "10", NULL};
+    result = _init_pfs(7, (char **)pfs_args);
+    if (result < 0) {
+        fprintf(stderr, "(!) init_pfs: failed with %d (%s)\n", result, strerror(-result));
+        return -1;
+    }
+
+    result = _init_hdlfs(0, NULL);
+    if (result < 0) {
+        fprintf(stderr, "(!) init_hdlfs: failed with %d (%s)\n", result, strerror(-result));
+        return -1;
+    }
+    return 0;
+}
+
+static int mount_partition(const char *partition_name)
+{
+    char mount_point[256];
+    snprintf(mount_point, sizeof(mount_point), "hdd0:%s", partition_name);
+    int result = iomanX_mount(IOMANX_MOUNT_POINT, mount_point, 0, NULL, 0);
+    if (result < 0) {
+        fprintf(stderr, "(!) mount of \"%s\" failed with %d (%s)\n", mount_point, result, strerror(-result));
+        return -1;
+    }
+    return 0;
+}
+
+static void unmount_partition(void)
+{
+    iomanX_umount(IOMANX_MOUNT_POINT);
+}
+
+/* Builds "pfs0:/<subpath>", tolerating subpath being empty (root) or
+ * already having a leading slash, so callers never have to think about
+ * double slashes. */
+static void build_pfs_path(char *out, size_t out_size, const char *subpath)
+{
+    while (subpath[0] == '/')
+        subpath++;
+    if (subpath[0] == '\0')
+        snprintf(out, out_size, "%s/", IOMANX_MOUNT_POINT);
+    else
+        snprintf(out, out_size, "%s/%s", IOMANX_MOUNT_POINT, subpath);
+}
+
+static int cmd_put(const char *partition_name, const char *pfs_dest_dir, const char *pfs_dest_filename, const char *local_source_path)
+{
+    int in_file = open(local_source_path, O_RDONLY);
+    if (in_file == -1) {
+        fprintf(stderr, "(!) %s: %s\n", local_source_path, strerror(errno));
+        return 1;
+    }
+
+    if (mount_partition(partition_name) != 0) {
+        close(in_file);
+        return 1;
+    }
+
+    int retval = 0;
+    char dest_path[768];
+
+    if (pfs_dest_dir[0] != '\0') {
+        char dir_path[512];
+        build_pfs_path(dir_path, sizeof(dir_path), pfs_dest_dir);
+        /* Best-effort: "already exists" is the expected outcome on every
+         * call after the first for a given directory. Only a subsequent
+         * open() failure below is treated as a real error. */
+        iomanX_mkdir(dir_path, 0777);
+        snprintf(dest_path, sizeof(dest_path), "%s/%s", dir_path, pfs_dest_filename);
+    } else {
+        build_pfs_path(dest_path, sizeof(dest_path), pfs_dest_filename);
+    }
+
+    int out_file = iomanX_open(dest_path, FIO_O_WRONLY | FIO_O_CREAT, 0666);
+    if (out_file >= 0) {
+        char buf[4096 * 16];
+        long len;
+        while ((len = read(in_file, buf, sizeof(buf))) > 0) {
+            int written = iomanX_write(out_file, buf, (int)len);
+            if (written != (int)len) {
+                fprintf(stderr, "(!) %s: write failed (wrote %d of %ld bytes)\n", dest_path, written, len);
+                retval = 1;
+                break;
+            }
+        }
+        if (len < 0) {
+            fprintf(stderr, "(!) %s: %s\n", local_source_path, strerror(errno));
+            retval = 1;
+        }
+        int close_result = iomanX_close(out_file);
+        if (close_result < 0) {
+            fprintf(stderr, "(!) %s: close failed with %d\n", dest_path, close_result);
+            retval = 1;
+        }
+    } else {
+        fprintf(stderr, "(!) %s: create failed with %d (%s)\n", dest_path, out_file, strerror(-out_file));
+        retval = 1;
+    }
+
+    close(in_file);
+    unmount_partition();
+    return retval;
+}
+
+/* Prints one name per line, matching pfsshell's own plain (non -l) `ls`
+ * format exactly: directories suffixed '/', symlinks suffixed '@' -- so the
+ * app's existing Swift-side parser for that format keeps working unchanged. */
+static int cmd_list(const char *partition_name, const char *pfs_path)
+{
+    if (mount_partition(partition_name) != 0)
+        return 1;
+
+    char dir_path[512];
+    build_pfs_path(dir_path, sizeof(dir_path), pfs_path);
+
+    int retval = 0;
+    int dh = iomanX_dopen(dir_path);
+    if (dh >= 0) {
+        iox_dirent_t dirent;
+        int result;
+        while ((result = iomanX_dread(dh, &dirent)) && result != -1) {
+            const char *suffix = "";
+            if (FIO_S_ISDIR(dirent.stat.mode))
+                suffix = "/";
+            else if (FIO_S_ISLNK(dirent.stat.mode))
+                suffix = "@";
+            printf("%s%s\n", dirent.name, suffix);
+        }
+        iomanX_close(dh);
+    } else {
+        fprintf(stderr, "(!) %s: %s\n", dir_path, strerror(-dh));
+        retval = 1;
+    }
+
+    unmount_partition();
+    return retval;
+}
+
+/* Removes a single file. Refuses to touch the partition root (an empty or
+ * "/" pfs_path) as a defensive guard against a caller-side bug ever turning
+ * into a wildcard-style deletion. */
+static int cmd_rm(const char *partition_name, const char *pfs_path)
+{
+    while (pfs_path[0] == '/')
+        pfs_path++;
+    if (pfs_path[0] == '\0') {
+        fprintf(stderr, "(!) refusing to remove the partition root\n");
+        return 1;
+    }
+
+    if (mount_partition(partition_name) != 0)
+        return 1;
+
+    char file_path[512];
+    build_pfs_path(file_path, sizeof(file_path), pfs_path);
+
+    int retval = 0;
+    int remove_result = iomanX_remove(file_path);
+    if (remove_result < 0) {
+        fprintf(stderr, "(!) %s: remove failed with %d (%s)\n", file_path, remove_result, strerror(-remove_result));
+        retval = 1;
+    }
+
+    unmount_partition();
+    return retval;
+}
+
+static void show_usage(const char *prog)
+{
+    fprintf(stderr,
+            "Usage:\n"
+            "  %s put <device> <partition> <destDir> <destFilename> <localSourcePath>\n"
+            "  %s list <device> <partition> <path>\n"
+            "  %s rm <device> <partition> <path>\n"
+            "(destDir may be empty (\"\") for the partition root)\n",
+            prog, prog, prog);
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc < 2) {
+        show_usage(argv[0]);
+        return 1;
+    }
+
+    const char *command = argv[1];
+    int result;
+
+    if (strcmp(command, "put") == 0) {
+        if (argc != 7) {
+            show_usage(argv[0]);
+            return 1;
+        }
+        if (init_device(argv[2]) != 0)
+            return 1;
+        result = cmd_put(argv[3], argv[4], argv[5], argv[6]);
+    } else if (strcmp(command, "list") == 0) {
+        if (argc != 5) {
+            show_usage(argv[0]);
+            return 1;
+        }
+        if (init_device(argv[2]) != 0)
+            return 1;
+        result = cmd_list(argv[3], argv[4]);
+    } else if (strcmp(command, "rm") == 0) {
+        if (argc != 5) {
+            show_usage(argv[0]);
+            return 1;
+        }
+        if (init_device(argv[2]) != 0)
+            return 1;
+        result = cmd_rm(argv[3], argv[4]);
+    } else {
+        show_usage(argv[0]);
+        return 1;
+    }
+
+    atad_close();
+    return result;
+}

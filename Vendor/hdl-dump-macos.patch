@@ -1,0 +1,227 @@
+diff --git a/hdl.c b/hdl.c
+index eb913e5..f1ed5e4 100644
+--- a/hdl.c
++++ b/hdl.c
+@@ -983,6 +983,14 @@ inject_data(hio_t *hio,
+              * except Ctrl+C might interrupt socket operation */
+             if (result == OSAL_OK)
+                 result = apa_commit_ex(hio, toc);
++
++            /* mac-hdl-gui: unlike apa_commit(), apa_commit_ex() is called
++             * directly here and does not flush on its own. Since writes are
++             * no longer O_DSYNC (see osal_open_device_for_writing), this
++             * explicit flush is what makes the just-written data + header +
++             * TOC physically durable before reporting success. */
++            if (result == OSAL_OK)
++                (void)hio->flush(hio);
+         }
+     }
+ 
+diff --git a/hdl_dump.c b/hdl_dump.c
+index 060790b..c16ce3d 100644
+--- a/hdl_dump.c
++++ b/hdl_dump.c
+@@ -85,6 +85,8 @@
+ #if defined(INCLUDE_HIDE_CMD)
+ #define CMD_HIDE "delete"
+ #endif
++/* mac-hdl-gui: real, working delete -- see delete_partition_real() below */
++#define CMD_HDL_DELETE "delete_game"
+ #if defined(INCLUDE_ZERO_CMD)
+ #define CMD_ZERO "zero"
+ #endif
+@@ -674,6 +676,37 @@ delete_partition(const dict_t *config,
+ #endif /* INCLUDE_HIDE_CMD defined? */
+ 
+ 
++/**************************************************************/
++/* mac-hdl-gui: real delete, wired to the existing (previously dead)
++ * apa_delete_partition(), which INCLUDE_HIDE_CMD's delete_partition()
++ * above never actually reached (it called nonexistent apa_HIDE_partition).
++ */
++static int
++delete_partition_real(const dict_t *config,
++                      const char *device_name,
++                      const char *name)
++{
++    /*@only@*/ apa_toc_t *toc = NULL;
++    int result = apa_toc_read(config, device_name, &toc);
++    if (result == RET_OK && toc != NULL) {
++        result = apa_delete_partition(toc, name);
++        if (result == RET_NOT_FOUND) { /* assume `name' is game name, instead of partition name */
++            char partition_id[PS2_PART_IDMAX + 1];
++            result = hdl_lookup_partition(config, device_name,
++                                          name, partition_id);
++            if (result == RET_OK)
++                result = apa_delete_partition(toc, partition_id);
++        }
++
++        if (result == RET_OK)
++            result = apa_commit(config, device_name, toc);
++
++        apa_toc_free(toc);
++    }
++    return (result);
++}
++
++
+ /**************************************************************/
+ #if defined(INCLUDE_ZERO_CMD)
+ static int
+@@ -1559,6 +1592,11 @@ show_usage_and_exit(const char *app_path,
+         {CMD_HDL_EXTRACT, "device name output_file",
+          "extract application image from HDL partition", NULL,
+          "hdd1: \"tekken tag tournament\" c:\\tekken.iso", NULL, 0},
++        {CMD_HDL_DELETE, "device partition/game",
++         "permanently delete a HDL partition and free its space",
++         "First attempts to locate partition by exact partition name,\n"
++         "then falls back to looking it up by game name (mac-hdl-gui addition).",
++         "hdd1: \"PP.HDL.Tekken Tag Tournament\"", "192.168.0.10 \"Tekken\"", 1},
+         {CMD_HDL_INJECT_CD, "target name source [startup] [+flags] [*dma] [@slice_index] [-hide]",
+          "create a new HDL partition from a CD",
+          "You can use boot.elf, list.cio, icon.sys. Check Readme\n"
+@@ -2046,6 +2084,14 @@ int main(int argc, char *argv[])
+         }
+ #endif /* INCLUDE_HIDE_CMD defined? */
+ 
++        else if (caseless_compare(command_name, CMD_HDL_DELETE)) { /* mac-hdl-gui: real delete */
++            if (argc != 4)
++                show_usage_and_exit(argv[0], CMD_HDL_DELETE);
++
++            handle_result_and_exit(delete_partition_real(config, argv[2], argv[3]),
++                                   argv[2], argv[3]);
++        }
++
+ #if defined(INCLUDE_ZERO_CMD)
+         else if (caseless_compare(command_name, CMD_ZERO)) { /* zero HDD */
+             char device_name[MAX_PATH];
+diff --git a/hio_win32.c b/hio_win32.c
+index e3514fb..e091db0 100644
+--- a/hio_win32.c
++++ b/hio_win32.c
+@@ -97,9 +97,20 @@ win32_write(hio_t *hio,
+ 
+ /**************************************************************/
+ static int
+-win32_flush(/*@unused@*/ hio_t *hio)
+-{ /* win32_flush is intentionately blank */
++win32_flush(hio_t *hio)
++{
++#if defined(_BUILD_UNIX)
++    /* mac-hdl-gui: osal_open_device_for_writing no longer opens with
++     * O_DSYNC (see its comment) -- this is now the real durability barrier,
++     * called right after the partition table is committed (apa_commit's
++     * existing hio->flush call, and the added one in hdl.c's inject_data). */
++    hio_win32_t *hw32 = (hio_win32_t *)hio;
++    return (osal_sync(hw32->device) == OSAL_OK ? RET_OK : RET_ERR);
++#else
++    /* win32_flush is intentionately blank on Windows -- unchanged */
++    (void)hio;
+     return (RET_OK);
++#endif
+ }
+ 
+ 
+diff --git a/iin.h b/iin.h
+index dc7f712..1eab853 100644
+--- a/iin.h
++++ b/iin.h
+@@ -31,7 +31,17 @@
+ C_START
+ 
+ #define IIN_SECTOR_SIZE 2048u /* CD/DVD sector size */
+-#define IIN_NUM_SECTORS 512u  /* number of sectors to read at once */
++/* mac-hdl-gui: bumped from 512 (1MB chunks) to 4096 (8MB chunks). Cheap
++ * USB-SATA bridge chipsets (common in PS2 HDD enclosures) often use
++ * Bulk-Only Transport rather than UASP, which has no command pipelining --
++ * each I/O op pays a fixed per-command round-trip cost regardless of size,
++ * so small chunks bottleneck throughput far below what the drive/bus can
++ * actually do. Larger chunks amortize that fixed cost over more bytes.
++ * Confirmed safe for this build: every consumer of this constant that's
++ * actually compiled here (USE_THREADED_IIN=no excludes thd_iin.c, the Unix
++ * build excludes iin_spti.c/iin_aspi.c) allocates its buffer on the heap via
++ * osal_alloc/al_alloc, not the stack, so this doesn't risk a stack overflow. */
++#define IIN_NUM_SECTORS 4096u /* number of sectors to read at once */
+ 
+ 
+ /*
+diff --git a/osal.h b/osal.h
+index 6f5a257..8e3d27d 100644
+--- a/osal.h
++++ b/osal.h
+@@ -123,6 +123,11 @@ int osal_write(osal_handle_t handle,
+ 
+ int osal_close(/*@special@*/ /*@only@*/ osal_handle_t *handle) /*@releases handle@*/;
+ 
++/* mac-hdl-gui: physically flushes any buffered writes on handle to the
++ * underlying device. See osal_open_device_for_writing's comment for why
++ * this exists. */
++int osal_sync(osal_handle_t handle);
++
+ 
+ /*@special@*/ /*@only@*/ /*@null@*/ void *osal_alloc(u_int32_t bytes) /*@allocates result@*/;
+ void osal_free(/*@special@*/ /*@only@*/ void *ptr) /*@releases ptr@*/;
+diff --git a/osal_unix.c b/osal_unix.c
+index 1298b9f..eb9e77f 100644
+--- a/osal_unix.c
++++ b/osal_unix.c
+@@ -95,11 +95,38 @@ int /* OSAL_OK, OSAL_ERR */
+ osal_open_device_for_writing(const char *device_name,
+                              osal_handle_t *handle)
+ {
+-    handle->desc = open(device_name, O_RDWR | O_LARGEFILE | O_DSYNC, S_IRUSR | S_IWUSR);
++    /* mac-hdl-gui: deliberately no O_DSYNC here (removed) -- forcing every
++     * ~1MB write to synchronously complete on the physical device made bulk
++     * installs extremely slow over USB, especially to a spinning drive.
++     * Writes are now buffered/pipelined by the OS for speed; durability is
++     * instead guaranteed by an explicit osal_sync() call at the one point
++     * that actually matters -- right after the partition table is committed
++     * (see apa_commit_ex's caller in hdl.c's inject_data, and apa_commit's
++     * existing hio->flush call, both of which now do a real flush via
++     * win32_flush -> osal_sync on Unix). A single sync there commits
++     * everything written on this handle up to that point (bulk data +
++     * partition header + TOC), which is the same safety property O_DSYNC
++     * provided, just paid for once instead of once per chunk. */
++    handle->desc = open(device_name, O_RDWR | O_LARGEFILE, S_IRUSR | S_IWUSR);
+     return (handle->desc == -1 ? OSAL_ERR : OSAL_OK);
+ }
+ 
+ 
++/**************************************************************/
++int /* OSAL_OK, OSAL_ERR */
++osal_sync(osal_handle_t handle)
++{
++#if defined(__APPLE__)
++    /* fsync() on macOS only guarantees data reached the drive's write
++     * cache, not physical media -- F_FULLFSYNC is Apple's documented way to
++     * get a true durability barrier, which is the property we need here. */
++    return (fcntl(handle.desc, F_FULLFSYNC) == -1 ? OSAL_ERR : OSAL_OK);
++#else
++    return (fsync(handle.desc) == -1 ? OSAL_ERR : OSAL_OK);
++#endif
++}
++
++
+ /**************************************************************/
+ int /* OSAL_OK, OSAL_ERR */
+ osal_create_file(const char *path,
+@@ -402,9 +429,17 @@ osal_map_device_name(const char *input,
+ {
+     struct stat64 st;
+     int result = stat64(input, &st) == 0 ? RET_OK : RET_ERR;
+-    if (result == RET_OK) { /* accept the input, only if it is a block device */
++    if (result == RET_OK) { /* accept the input, only if it is a block or character (raw) device */
+ #if !defined(_DEBUG)        /* in debug mode treat files as devices */
+-        result = st.st_mode & S_IFBLK ? RET_OK : RET_BAD_DEVICE;
++        /* mac-hdl-gui: also accept S_IFCHR (raw/character device, /dev/rdiskN
++         * on macOS) in addition to the original S_IFBLK-only check. macOS's
++         * buffered block device (/dev/diskN) goes through the BSD unified
++         * buffer cache, which is well known to be significantly slower than
++         * the raw device for large sequential transfers like this (the same
++         * reason every macOS `dd` guide recommends /dev/rdiskN). Sector-
++         * aligned I/O (this tool always transfers whole 512-byte-multiple
++         * sectors) works correctly against the raw device. */
++        result = (st.st_mode & (S_IFBLK | S_IFCHR)) ? RET_OK : RET_BAD_DEVICE;
+ #endif
+         if (result == RET_OK)
+             strcpy(output, input);

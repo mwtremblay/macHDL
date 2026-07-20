@@ -1,0 +1,16 @@
+diff --git a/meson.build b/meson.build
+index d50618a..1a2b3c4 100644
+--- a/meson.build
++++ b/meson.build
+@@ -51,6 +51,11 @@ pfsshell_dependson = [
+ pfsshell = executable('pfsshell', sources: pfsshell_src, c_args: pfsshell_cflags, link_args: pfsshell_ldflags, dependencies: pfsshell_dependson, install: true)
+ libps2hdd = shared_library('ps2hdd', sources: pfsshell_src, c_args: pfsshell_cflags, link_args: pfsshell_ldflags, dependencies: pfsshell_dependson, install: true)
+
++pfsutil_src = [
++	'src/pfsutil.c',
++]
++pfsutil = executable('pfsutil', sources: pfsutil_src, c_args: pfsshell_cflags, link_args: pfsshell_ldflags, dependencies: pfsshell_dependson, install: true)
++
+ if get_option('enable_pfsfuse') == true
+
+ if host_system == 'windows' and cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
