@@ -4,6 +4,7 @@ import Foundation
 final class InstallPS1GameViewModel: ObservableObject {
     enum Phase: Equatable {
         case idle
+        case combiningSplitDump
         case converting
         case copyingToDrive
     }
@@ -24,12 +25,18 @@ final class InstallPS1GameViewModel: ObservableObject {
 
     private let service: PS1GameService
     private let converter: PS1GameConverter
+    private let combiner: SplitDumpCombiner
     private var elapsedTimer: Timer?
     private var startedAt: Date?
 
-    init(service: PS1GameService, converter: PS1GameConverter = PS1GameConverter()) {
+    init(
+        service: PS1GameService,
+        converter: PS1GameConverter = PS1GameConverter(),
+        combiner: SplitDumpCombiner = SplitDumpCombiner()
+    ) {
         self.service = service
         self.converter = converter
+        self.combiner = combiner
     }
 
     var isNameValid: Bool {
@@ -56,6 +63,7 @@ final class InstallPS1GameViewModel: ObservableObject {
     var phaseText: String {
         switch phase {
         case .idle: return ""
+        case .combiningSplitDump: return "Combining split disc image…"
         case .converting: return "Converting to POPStarter format…"
         case .copyingToDrive: return "Copying to drive…"
         }
@@ -78,16 +86,28 @@ final class InstallPS1GameViewModel: ObservableObject {
         }
 
         do {
-            phase = .converting
             let workDir = FileManager.default.temporaryDirectory
                 .appendingPathComponent("macHDL-ps1-convert-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: workDir) }
 
+            // Split dumps (multiple .bin files per .cue) can't be converted
+            // directly by cue2pops -- merge them into a single .bin/.cue
+            // first via psx-vcd, then feed the merged .cue into the same,
+            // unchanged cue2pops conversion path below. Non-split dumps
+            // (the common case) skip this entirely.
+            var cueToConvert = sourceURL
+            if try CueSheetAnalyzer.isSplitDump(cueURL: sourceURL) {
+                phase = .combiningSplitDump
+                let combineScratchDir = workDir.appendingPathComponent("combined", isDirectory: true)
+                cueToConvert = try await combiner.combine(cueURL: sourceURL, into: combineScratchDir)
+            }
+
+            phase = .converting
             // The local temp filename doesn't matter (deleted after upload)
             // -- only the destination filename (vcdFilename) does.
             let vcdURL = workDir.appendingPathComponent(vcdFilename)
-            _ = try await converter.convert(cueURL: sourceURL, outputVCDURL: vcdURL)
+            _ = try await converter.convert(cueURL: cueToConvert, outputVCDURL: vcdURL)
 
             phase = .copyingToDrive
             try await service.createGamesPartitionIfNeeded(sizeBytes: Self.defaultGamesPartitionSizeBytes, on: disk)

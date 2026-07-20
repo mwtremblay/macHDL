@@ -29,7 +29,7 @@ struct AddPS1GameSheet: View {
                         .foregroundStyle(.orange)
                 }
 
-                Text("PS1 games are always CD-based -- multi-track cue sheets (with CD-DA audio tracks) are supported.")
+                Text("PS1 games are always CD-based -- multi-track cue sheets (with CD-DA audio tracks) are supported, including \"split\" dumps with a separate .bin file per track.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

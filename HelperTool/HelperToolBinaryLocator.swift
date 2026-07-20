@@ -20,7 +20,7 @@ enum HelperToolBinaryLocator {
 
     /// Resolves hdl_dump's path relative to this daemon's own executable
     /// location inside the app bundle. Cannot use Bundle.main the way the app
-    /// target's HDLDumpBinaryLocator does -- for a bare `tool`-type executable
+    /// target's BundledBinaryLocator does -- for a bare `tool`-type executable
     /// launched by launchd, Bundle.main does not represent the containing
     /// .app bundle. Also cannot use CommandLine.arguments[0]: for a daemon
     /// launched via a launchd plist's `BundleProgram` key, argv[0] is

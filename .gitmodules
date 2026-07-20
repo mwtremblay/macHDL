@@ -7,3 +7,6 @@
 [submodule "Vendor/cue2pops-mac"]
 	path = Vendor/cue2pops-mac
 	url = https://github.com/ErikAndren/cue2pops-mac.git
+[submodule "Vendor/psx-vcd"]
+	path = Vendor/psx-vcd
+	url = https://github.com/leji-a/psx-vcd.git

@@ -30,7 +30,7 @@ struct PS1GameConverter {
     /// reading its source and testing standalone (see project memory). All
     /// of its output, including errors, goes to stdout, not stderr.
     func convert(cueURL: URL, outputVCDURL: URL, onOutputLine: ((String) -> Void)? = nil) async throws -> URL {
-        let binary = try Cue2PopsBinaryLocator.resolve()
+        let binary = try BundledBinaryLocator.resolve(name: "cue2pops", subdirectory: "cue2pops-bin")
 
         return try await withCheckedThrowingContinuation { continuation in
             let process = Process()

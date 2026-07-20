@@ -33,7 +33,7 @@ targets:
         PRODUCT_NAME: macHDL
         CODE_SIGN_ENTITLEMENTS: macHDL.entitlements
         GENERATE_INFOPLIST_FILE: YES
-        MARKETING_VERSION: "1.0.0"
+        MARKETING_VERSION: "1.0.1"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
@@ -69,6 +69,20 @@ targets:
           - "$(SRCROOT)/Vendor/cue2pops-mac/Makefile"
         outputFiles:
           - "$(CODESIGNING_FOLDER_PATH)/Contents/Resources/cue2pops-bin/cue2pops"
+        basedOnDependencyAnalysis: false
+      - name: "Build & Embed psx-vcd"
+        script: |
+          "${SRCROOT}/Scripts/build-psxvcd.sh"
+        inputFiles:
+          - "$(SRCROOT)/Vendor/psx-vcd/Cargo.toml"
+          - "$(SRCROOT)/Vendor/psx-vcd/Cargo.lock"
+          - "$(SRCROOT)/Vendor/psx-vcd/src/main.rs"
+          - "$(SRCROOT)/Vendor/psx-vcd/src/cue.rs"
+          - "$(SRCROOT)/Vendor/psx-vcd/src/vcd.rs"
+          - "$(SRCROOT)/Vendor/psx-vcd/src/combiner.rs"
+          - "$(SRCROOT)/Vendor/psx-vcd/src/utils.rs"
+        outputFiles:
+          - "$(CODESIGNING_FOLDER_PATH)/Contents/Resources/psxvcd-bin/psx-vcd"
         basedOnDependencyAnalysis: false
     postCompileScripts:
       - name: "Embed Privileged Helper"

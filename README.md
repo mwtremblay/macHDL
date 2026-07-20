@@ -14,7 +14,14 @@ reimplementing the HDL/APA/PFS formats itself:
 - `pfsutil` — a small CLI (`Scripts/pfsutil-src/pfsutil.c`), written for this
   project, that transfers files into/out of those PFS partitions.
 - [`cue2pops-mac`](https://github.com/ErikAndren/cue2pops-mac) — converts a
-  PS1 `.bin`/`.cue` image to the `.VCD` format PopStarter expects.
+  PS1 `.bin`/`.cue` image to the `.VCD` format PopStarter expects. Only
+  supports a single, unsplit `.bin` per `.cue`.
+- [`psx-vcd`](https://github.com/leji-a/psx-vcd) — used narrowly to merge
+  "split" dumps (multiple `.bin` files per `.cue`, one per track) into a
+  single combined `.bin`/`.cue`, which is then handed to `cue2pops-mac` as
+  normal. macHDL never uses psx-vcd's own VCD-writing (`auto`/`convert`)
+  path — only `combine` — since it's a much newer, less-established tool
+  than everything else vendored here.
 - [`POPSLoader`](https://github.com/NathanNeurotic/POPSLoader) — provides
   `POPSTARTER.ELF`/`POPSLOADER.ELF`/`PATCH_5.BIN`, the loader that actually
   boots a PS1 game on the console.
@@ -40,9 +47,10 @@ reimplementing the HDL/APA/PFS formats itself:
 - One-time PopStarter setup: creates the `__common` PFS partition and
   installs the required system files (prompting for the two Sony-copyrighted
   ones, auto-installing the rest).
-- Adds a PS1 game from a `.bin`/`.cue` pair: converts it to `.VCD` via
-  `cue2pops`, creates the `__.POPS` PFS partition if needed, and copies it
-  onto the drive.
+- Adds a PS1 game from a `.bin`/`.cue` pair (including "split" dumps with a
+  separate `.bin` per track): converts it to `.VCD` via `cue2pops` (merging
+  split dumps first via `psx-vcd`), creates the `__.POPS` PFS partition if
+  needed, and copies it onto the drive.
 - Refuses to operate on your Mac's own boot disk, checked independently by
   the privileged helper (not just a UI-level confirmation).
 
@@ -51,15 +59,15 @@ reimplementing the HDL/APA/PFS formats itself:
 ```bash
 git clone --recurse-submodules git@github.com:mwtremblay/macHDL.git
 cd macHDL
-brew install xcodegen meson ninja
+brew install xcodegen meson ninja rust
 xcodegen generate
 open mac-hdl-gui.xcodeproj
 ```
 
 Build the `mac-hdl-gui` scheme in Xcode (or `xcodebuild -scheme mac-hdl-gui
-build`). The vendored `hdl-dump`, `pfsshell`/`pfsutil`, and `cue2pops`
-binaries are built and code-signed automatically as part of the app build
-(see `Scripts/build-*.sh`).
+build`). The vendored `hdl-dump`, `pfsshell`/`pfsutil`, `cue2pops`, and
+`psx-vcd` binaries are built and code-signed automatically as part of the
+app build (see `Scripts/build-*.sh`).
 
 ### Development install
 

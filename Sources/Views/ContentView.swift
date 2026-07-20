@@ -67,7 +67,7 @@ struct ContentView: View {
         )
         .task {
             do {
-                _ = try HDLDumpBinaryLocator.resolve()
+                _ = try BundledBinaryLocator.resolve(name: "hdl_dump", subdirectory: "hdl-dump-bin")
             } catch {
                 binaryMissingError = IdentifiableError(underlying: error)
             }
