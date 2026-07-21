@@ -117,6 +117,35 @@ final class HDLDumpHelperClient {
         }
     }
 
+    /// SAFETY-CRITICAL: see HDLDumpHelperProtocol.initializeBlankAPADisk --
+    /// wipes the entire disk's APA scheme. The daemon does NOT re-check
+    /// blankness before running (that gate was deliberately removed in
+    /// favor of an informed client-side confirmation -- see
+    /// FreeHDBootSetupSheet); it only re-checks that the target isn't the
+    /// boot disk, and independently verifies afterward that all four base
+    /// partitions actually got built (pfsshell's own `initialize` can report
+    /// success without having formatted all of them -- see
+    /// HDLDumpHelperService.initializeBlankAPADisk for why). This call is
+    /// just the transport for both of those; it is not itself a safety
+    /// check.
+    func initializeBlankAPADisk(devicePath: String) async throws -> (exitCode: Int32, stderr: String) {
+        try await performCall { helper, complete in
+            helper.initializeBlankAPADisk(devicePath: devicePath) { exitCode, stderr in
+                complete(.success((exitCode, stderr)))
+            }
+        }
+    }
+
+    func injectMBR(devicePath: String, mbrKelfPath: String, onProgress: ((String) -> Void)?) async throws -> (exitCode: Int32, stderr: String) {
+        progressExportedObject.handler = onProgress
+        defer { progressExportedObject.handler = nil }
+        return try await performCall { helper, complete in
+            helper.injectMBR(devicePath: devicePath, mbrKelfPath: mbrKelfPath) { exitCode, stderr in
+                complete(.success((exitCode, stderr)))
+            }
+        }
+    }
+
     func listPFSFiles(devicePath: String, partitionName: String, pfsPath: String) async throws -> (names: [String]?, exitCode: Int32, stderr: String) {
         try await performCall { helper, complete in
             helper.listPFSFiles(devicePath: devicePath, partitionName: partitionName, pfsPath: pfsPath) { names, exitCode, stderr in

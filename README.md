@@ -25,6 +25,16 @@ reimplementing the HDL/APA/PFS formats itself:
 - [`POPSLoader`](https://github.com/NathanNeurotic/POPSLoader) — provides
   `POPSTARTER.ELF`/`POPSLOADER.ELF`/`PATCH_5.BIN`, the loader that actually
   boots a PS1 game on the console.
+- [`FreeMcBoot-Installer`](https://github.com/israpps/FreeMcBoot-Installer) —
+  provides the prebuilt FreeHDBoot (FMCB) MBR bootstrap
+  (`installer_res/<version>/INSTALL/SYSTEM/MBR.XLF`) and menu/system files
+  used to turn a blank PS2 HDD into a bootable FreeMcBoot drive, entirely
+  from the Mac. These ship as ready-to-use binaries in the upstream repo —
+  no PS2 toolchain needed to build anything. **License note**: unlike the
+  other vendored tools above, this project has no declared license (no
+  `LICENSE` file, no per-file license headers, nothing in its GitHub repo
+  metadata) — it's vendored in good faith, consistent with common
+  PS2-homebrew-scene practice, not because its terms have been confirmed.
 
 Cover art is fetched at runtime (never bundled) from
 [Luden02/psx-ps2-opl-art-database](https://github.com/Luden02/psx-ps2-opl-art-database),
@@ -60,6 +70,9 @@ a community archive of the OPL Manager art database.
   separate `.bin` per track): converts it to `.VCD` via `cue2pops` (merging
   split dumps first via `psx-vcd`), creates a `__.POPS` PFS partition if
   needed, and copies it onto the drive.
+- **Batch Add Games** for PS1 too: select multiple `.cue` files at once;
+  each goes through the same convert-and-copy pipeline as a single install,
+  and already-installed games are skipped automatically.
 - **Cover art**: fetches and installs cover art for both PS2 (via Open PS2
   Loader's `+OPL` partition) and PS1 (via POPSLoader's `__common/POPS/ART`)
   games from a community art archive, displayed in-app in a dedicated
@@ -83,6 +96,7 @@ Build the `mac-hdl-gui` scheme in Xcode (or `xcodebuild -scheme mac-hdl-gui
 build`). The vendored `hdl-dump`, `pfsshell`/`pfsutil`, `cue2pops`, and
 `psx-vcd` binaries are built and code-signed automatically as part of the
 app build (see `Scripts/build-*.sh`).
+
 
 ### Development install
 
@@ -111,8 +125,8 @@ sudo launchctl kickstart -k system/com.michaeltremblay.machdl.helper
    Games** to install several at once), or select a game and delete it from
    the list.
 4. For PS1 support: run **PopStarter Setup** once (supplying your own
-   `POPS.ELF`/`IOPRP252.IMG`), then use **Add PS1 Game** to install games
-   from `.bin`/`.cue` pairs.
+   `POPS.ELF`/`IOPRP252.IMG`), then use **Add PS1 Game** (or **Batch Add
+   Games** for several at once) to install games from `.bin`/`.cue` pairs.
 5. Use **Fetch Artwork** (per-game) or **Fetch All Artwork** (bulk) to pull
    cover art for your library — it also fetches automatically on install.
 

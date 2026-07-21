@@ -18,10 +18,47 @@ enum HDLDumpError: Error, LocalizedError {
     case notPlayStationDisc                // 112
     case badSystemConfig                   // 113
     case notCompatible                     // 114
-    case operationNotAllowed               // 115 -- e.g. attempting to touch the boot disk, or delete a system partition
+    /// 115 -- a daemon-side refusal (e.g. attempting to touch the boot disk,
+    /// or an invalid PFS partition name). Carries the actual reason string --
+    /// either the daemon's own reply text (e.g. "refused: invalid PFS
+    /// partition name '...'") for daemon-relayed refusals, or
+    /// `Self.bootDiskRefusalMessage` for the client-side-only throw sites
+    /// (see FreeHDBootService/HDLDumpService/PS1GameService's
+    /// guardNotBootDisk, which never round-trip through the daemon at all).
+    /// An earlier version of this case had no associated value, which meant
+    /// every refusal surfaced identically as a bare "This operation is not
+    /// allowed." with no way to tell which guard fired without reading
+    /// server logs.
+    case operationNotAllowed(message: String)
     case fileNotFound                      // 120
     case multitrackNotSupported            // 133 -- multi-track (audio) CUE/BIN, single-track only
     case unknown(exitCode: Int32, stderr: String)
+
+    /// A destructive whole-disk operation (FreeHDBoot's `initializeAPA`/
+    /// `injectBootloader`, see FreeHDBootService) failed partway through --
+    /// unlike an ordinary file-write failure, this can leave the disk's APA
+    /// partition table in a half-rebuilt, inconsistent state (see
+    /// HDLDumpHelperService.initializeBlankAPADisk's post-`initialize`
+    /// verification step for why this can't just be trusted to have fully
+    /// succeeded or fully failed). FreeHDBootService wraps failures from
+    /// those two specific steps into this case rather than letting them
+    /// surface as an ordinary `.ioError`/`.unknown`, since the user needs a
+    /// categorically different warning than "a file copy failed." Typed as
+    /// `HDLDumpError`, not a bare `Error` -- the only construction site
+    /// (FreeHDBootService.throwPossiblyDiskCorrupting) always has a
+    /// concrete `HDLDumpError` in hand, and keeping it typed lets callers
+    /// (e.g. `isLikelyMissingFullDiskAccess` below) inspect the underlying
+    /// case without an unenforced `as?` downcast. Deliberately never wraps
+    /// `.operationNotAllowed` or `.daemonLaunchFailed` (see
+    /// throwPossiblyDiskCorrupting) -- both mean nothing was actually
+    /// written, so they stay as themselves rather than getting this
+    /// disk-may-be-corrupted treatment.
+    indirect case partitionTableMayBeInconsistent(underlying: HDLDumpError)
+
+    /// Shared by every client-side-only `guardNotBootDisk` throw site (see
+    /// FreeHDBootService/HDLDumpService/PS1GameService) so the message never
+    /// silently drifts from what those call sites actually pass.
+    static let bootDiskRefusalMessage = "target is the boot disk"
 
     /// hdl_dump itself failed to launch inside the daemon (not found, not
     /// executable, spawn error) -- relayed as exit code -1 by
@@ -38,10 +75,19 @@ enum HDLDumpError: Error, LocalizedError {
     /// this as a plain "Operation not permitted" (EPERM) I/O error with no
     /// distinguishing exit code, so detect it by message content.
     var isLikelyMissingFullDiskAccess: Bool {
-        if case .ioError(let message) = self {
+        switch self {
+        case .ioError(let message):
             return message.localizedCaseInsensitiveContains("Operation not permitted")
+        // Recurses into the wrapped error -- throwPossiblyDiskCorrupting
+        // already excludes FDA failures from being wrapped in the first
+        // place, but checking here too means this stays correct even if
+        // that exclusion is ever incomplete, without every caller having
+        // to know to unwrap partitionTableMayBeInconsistent first.
+        case .partitionTableMayBeInconsistent(let underlying):
+            return underlying.isLikelyMissingFullDiskAccess
+        default:
+            return false
         }
-        return false
     }
 
     /// pfsutil/pfsshell (unlike hdl_dump) only ever return exit code 0 or 1
@@ -54,10 +100,14 @@ enum HDLDumpError: Error, LocalizedError {
     /// own Scripts/pfsutil-src/pfsutil.c was fixed to report it clearly
     /// instead of a bare negative number.
     var isLikelyOutOfSpace: Bool {
-        if case .ioError(let message) = self {
+        switch self {
+        case .ioError(let message):
             return message.localizedCaseInsensitiveContains("No space left on device")
+        case .partitionTableMayBeInconsistent(let underlying):
+            return underlying.isLikelyOutOfSpace
+        default:
+            return false
         }
-        return false
     }
 
     init(exitCode: Int32, stderr: String) {
@@ -78,7 +128,7 @@ enum HDLDumpError: Error, LocalizedError {
         case 112: self = .notPlayStationDisc
         case 113: self = .badSystemConfig
         case 114: self = .notCompatible
-        case 115: self = .operationNotAllowed
+        case 115: self = .operationNotAllowed(message: stderr.trimmingCharacters(in: .whitespacesAndNewlines))
         case 120: self = .fileNotFound
         case 133: self = .multitrackNotSupported
         default: self = .unknown(exitCode: exitCode, stderr: stderr)
@@ -117,8 +167,8 @@ enum HDLDumpError: Error, LocalizedError {
             return "SYSTEM.CNF is not in the expected format."
         case .notCompatible:
             return "This input is not supported."
-        case .operationNotAllowed:
-            return "This operation is not allowed."
+        case .operationNotAllowed(let message):
+            return message.isEmpty ? "This operation is not allowed." : "This operation is not allowed: \(message)"
         case .fileNotFound:
             return "File not found."
         case .multitrackNotSupported:
@@ -132,6 +182,9 @@ enum HDLDumpError: Error, LocalizedError {
                 return "Lost connection to the macHDL privileged helper: \(underlying.localizedDescription)"
             }
             return "Lost connection to the macHDL privileged helper."
+        case .partitionTableMayBeInconsistent(let underlying):
+            let underlyingMessage = underlying.errorDescription ?? "\(underlying)"
+            return "FreeHDBoot setup failed while rebuilding the drive's partition table: \(underlyingMessage)\n\nThe drive's partition table may now be left in an inconsistent, half-rebuilt state — this is not a routine failure. Do not use the drive until you re-run FreeHDBoot setup from the start (it will detect the drive is no longer blank and warn you) or re-initialize it."
         }
     }
 }

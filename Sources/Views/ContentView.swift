@@ -16,7 +16,9 @@ struct ContentView: View {
     @State private var showingAddGameSheet = false
     @State private var showingBatchAddGameSheet = false
     @State private var showingAddPS1GameSheet = false
+    @State private var showingBatchAddPS1GameSheet = false
     @State private var showingPopStarterSetupSheet = false
+    @State private var showingFreeHDBootSetupSheet = false
     @State private var infoSheetItem: InfoSheetItem?
     @State private var infoError: IdentifiableError?
     @State private var binaryMissingError: IdentifiableError?
@@ -27,6 +29,7 @@ struct ContentView: View {
 
     private let service: HDLDumpService
     private let ps1Service: PS1GameService
+    private let freeHDBootService: FreeHDBootService
     private let artworkService: GameArtworkService
     private let artworkFetcher: GameArtworkFetcher
 
@@ -34,10 +37,12 @@ struct ContentView: View {
         let helperClient = HDLDumpHelperClient()
         let service = HDLDumpService(helper: helperClient)
         let ps1Service = PS1GameService(helper: helperClient)
+        let freeHDBootService = FreeHDBootService(helper: helperClient, ps1Service: ps1Service)
         let artworkService = GameArtworkService(ps1Service: ps1Service)
         let artworkFetcher = GameArtworkFetcher()
         self.service = service
         self.ps1Service = ps1Service
+        self.freeHDBootService = freeHDBootService
         self.artworkService = artworkService
         self.artworkFetcher = artworkFetcher
         _gameListViewModel = StateObject(wrappedValue: GameListViewModel(service: service, artworkService: artworkService, artworkFetcher: artworkFetcher))
@@ -58,11 +63,14 @@ struct ContentView: View {
             showingAddGameSheet: $showingAddGameSheet,
             showingBatchAddGameSheet: $showingBatchAddGameSheet,
             showingAddPS1GameSheet: $showingAddPS1GameSheet,
+            showingBatchAddPS1GameSheet: $showingBatchAddPS1GameSheet,
             showingPopStarterSetupSheet: $showingPopStarterSetupSheet,
+            showingFreeHDBootSetupSheet: $showingFreeHDBootSetupSheet,
             infoSheetItem: $infoSheetItem,
             fetchPS1ArtworkGame: $fetchPS1ArtworkGame,
             service: service,
             ps1Service: ps1Service,
+            freeHDBootService: freeHDBootService,
             artworkService: artworkService,
             artworkFetcher: artworkFetcher,
             gameListViewModel: gameListViewModel,
@@ -225,6 +233,26 @@ struct ContentView: View {
                 .disabled(driveListViewModel.selectedDisk == nil)
             }
 
+            // Non-game-specific drive operations live here rather than as
+            // flat toolbar buttons -- FreeHDBoot setup is the first. Uses
+            // the same `.disabled(selectedDisk == nil)` condition as every
+            // other button here: that's sufficient on its own because
+            // DiskDiscoveryService.listCandidateDisks() doesn't filter by
+            // whether a drive is already HDL/APA-formatted, so a brand-new/
+            // blank external drive still shows up as a selectable disk.
+            Menu {
+                Button {
+                    DispatchQueue.main.async {
+                        showingFreeHDBootSetupSheet = true
+                    }
+                } label: {
+                    Label("Set Up FreeHDBoot…", systemImage: "opticaldiscdrive")
+                }
+                .disabled(driveListViewModel.selectedDisk == nil)
+            } label: {
+                Label("Utilities", systemImage: "wrench.and.screwdriver")
+            }
+
             Button {
                 // See the Delete Game button's comment: deferred to avoid
                 // SwiftUI's "Publishing changes from within view updates"
@@ -244,6 +272,17 @@ struct ContentView: View {
                 Button {
                     DispatchQueue.main.async {
                         showingBatchAddGameSheet = true
+                    }
+                } label: {
+                    Label("Batch Add Games", systemImage: "square.stack.3d.up")
+                }
+                .disabled(driveListViewModel.selectedDisk == nil)
+            }
+
+            if selectedGameKind == .ps1 {
+                Button {
+                    DispatchQueue.main.async {
+                        showingBatchAddPS1GameSheet = true
                     }
                 } label: {
                     Label("Batch Add Games", systemImage: "square.stack.3d.up")
@@ -348,11 +387,14 @@ private extension View {
         showingAddGameSheet: Binding<Bool>,
         showingBatchAddGameSheet: Binding<Bool>,
         showingAddPS1GameSheet: Binding<Bool>,
+        showingBatchAddPS1GameSheet: Binding<Bool>,
         showingPopStarterSetupSheet: Binding<Bool>,
+        showingFreeHDBootSetupSheet: Binding<Bool>,
         infoSheetItem: Binding<InfoSheetItem?>,
         fetchPS1ArtworkGame: Binding<PS1Game?>,
         service: HDLDumpService,
         ps1Service: PS1GameService,
+        freeHDBootService: FreeHDBootService,
         artworkService: GameArtworkService,
         artworkFetcher: GameArtworkFetcher,
         gameListViewModel: GameListViewModel,
@@ -389,9 +431,24 @@ private extension View {
                     )
                 }
             }
+            .sheet(isPresented: showingBatchAddPS1GameSheet) {
+                if let selectedDisk {
+                    BatchAddPS1GameSheet(
+                        viewModel: BatchInstallPS1GameViewModel(service: ps1Service, artworkService: artworkService),
+                        disk: selectedDisk,
+                        existingGameNames: Set(ps1GameListViewModel.games.map(\.displayName)),
+                        onInstalled: { await ps1GameListViewModel.refresh(disk: selectedDisk) }
+                    )
+                }
+            }
             .sheet(isPresented: showingPopStarterSetupSheet) {
                 if let selectedDisk {
                     PopStarterSetupSheet(viewModel: PopStarterSetupViewModel(service: ps1Service), disk: selectedDisk)
+                }
+            }
+            .sheet(isPresented: showingFreeHDBootSetupSheet) {
+                if let selectedDisk {
+                    FreeHDBootSetupSheet(viewModel: FreeHDBootSetupViewModel(service: freeHDBootService), disk: selectedDisk)
                 }
             }
             .sheet(item: infoSheetItem) { item in

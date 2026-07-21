@@ -23,6 +23,62 @@ targets:
         buildPhase: resources
       - path: Vendor/popstarter/PATCH_5.BIN
         buildPhase: resources
+      # FreeHDBoot (FMCB 1.966) payload -- the exact file set copied to an
+      # HDD by installer/system.c's HDDBaseFiles[]/PS2SysHDDFiles[] tables
+      # in the upstream FreeMcBoot-Installer project. See FreeHDBootService
+      # and FreeHDBootDestinationPaths for how these are used; MBR.XLF is
+      # handled separately via hdl_dump inject_mbr, not copied as a plain
+      # PFS file like the rest.
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/MBR.XLF
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FHDB.XLF
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/ENDVDPL.XRX
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/FSCK.XLF
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/NotoSans-Bold.ttf
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/NotoSansJP-Bold.otf
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/fonts.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_JA.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_JA.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_FR.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_FR.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_SP.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_SP.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_GE.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_GE.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_IT.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_IT.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_DU.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_DU.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/strings_PO.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_PO.txt
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/FREEHDB.CNF
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/FMCB_CFG.ELF
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/USBD.IRX
+        buildPhase: resources
+      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/USBHDFSD.IRX
+        buildPhase: resources
     dependencies:
       - target: mac-hdl-gui-helper
         embed: false      # not a framework/plugin -- placed manually by embed-helper.sh
@@ -33,7 +89,7 @@ targets:
         PRODUCT_NAME: macHDL
         CODE_SIGN_ENTITLEMENTS: macHDL.entitlements
         GENERATE_INFOPLIST_FILE: YES
-        MARKETING_VERSION: "1.0.2"
+        MARKETING_VERSION: "1.0.3"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities

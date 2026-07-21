@@ -131,7 +131,7 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// reaching pfsshell -- see PFSPartitionSizing's doc comment for why.
     func createPOPSPartition(devicePath: String, partitionName: String, sizeBytes: Int64, with reply: @escaping (Int32, String) -> Void) {
         Task {
-            guard Self.isValidPFSPartitionName(partitionName) else {
+            guard Self.isValidPFSPartitionNameForPartitionOps(partitionName) else {
                 reply(115, "refused: invalid PFS partition name '\(partitionName)'")
                 return
             }
@@ -150,6 +150,116 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
             } catch {
                 await session?.forceTerminate()
                 reply(-1, "pfsshell failed: \(error)")
+            }
+        }
+    }
+
+    /// This is the one operation in the whole app that wipes an entire
+    /// disk's partition table, not one partition -- but it does not itself
+    /// require the disk to be blank. Whether the target already has data on
+    /// it is surfaced to the user client-side (see
+    /// FreeHDBootService.existingPartitionNames/FreeHDBootSetupViewModel) as
+    /// an informed decision, not enforced here: this app applies that same
+    /// "show what's there, let the user confirm" pattern to every other
+    /// destructive action (see deleteGame, removePFSFile above), and this
+    /// is deliberately no different. The boot-disk check below is the one
+    /// thing that's never negotiable, here or anywhere else in this file.
+    func initializeBlankAPADisk(devicePath: String, with reply: @escaping (Int32, String) -> Void) {
+        Task {
+            let targetsBootDisk = await isBootDisk(devicePath: devicePath)
+            guard !targetsBootDisk else {
+                reply(115, "refused: target is the boot disk")
+                return
+            }
+            var session: PFSShellSession?
+            let initializeOutput: String
+            do {
+                session = try await PFSShellSession.open(devicePath: devicePath)
+                initializeOutput = try await session!.send("initialize yes")
+                await session!.close()
+            } catch {
+                await session?.forceTerminate()
+                reply(-1, "pfsshell failed: \(error)")
+                return
+            }
+            guard Self.succeeded(initializeOutput) else {
+                reply(1, initializeOutput)
+                return
+            }
+            // SAFETY-CRITICAL: pfsshell's own `do_initialize` (Vendor/
+            // pfsshell/src/shell.c) only checks/reports the base APA format
+            // result -- the three `mkpfs(...)` calls that build __system/
+            // __sysconf/__common are bare statements with their return
+            // values discarded, and `mkpfs` itself never prints anything on
+            // failure. A "succeeded" REPL response above therefore does NOT
+            // guarantee all four partitions actually exist -- confirmed
+            // directly from the vendored C source, not assumed. Independently
+            // verify via `hdl_dump toc` before ever reporting success.
+            do {
+                let tocResult = try await runner.run(
+                    binary: try HelperToolBinaryLocator.resolve(),
+                    arguments: ["toc", devicePath],
+                    workingDirectory: FileManager.default.temporaryDirectory,
+                    onOutputLine: nil,
+                    trackForCancellation: false
+                )
+                // Check toc's own exit code/stderr before ever trusting its
+                // stdout -- if `toc` itself failed (e.g. a transient I/O
+                // error right after `initialize`, the same flaky-USB-bridge
+                // class of issue already documented elsewhere in this file),
+                // stdout will be empty/unparseable and every partition would
+                // otherwise be misreported as "missing," burying the real
+                // diagnostic. listAllPartitions (above) already propagates
+                // exitCode/stdout/stderr faithfully for this exact command;
+                // this mirrors that instead of discarding them.
+                guard tocResult.exitCode == 0 else {
+                    reply(1, "pfsshell reported success, but verifying the result failed: hdl_dump toc exited \(tocResult.exitCode): \(tocResult.stderr.isEmpty ? tocResult.stdout : tocResult.stderr). The disk's partition table may now be left in an inconsistent state.")
+                    return
+                }
+                let missing = Self.expectedBaseLayoutPartitionNames.filter { !APATOCParsing.output(tocResult.stdout, containsPartitionNamed: $0) }
+                guard missing.isEmpty else {
+                    reply(1, "pfsshell reported success, but the following partition(s) are missing afterward: \(missing.joined(separator: ", ")). The disk's partition table may now be left in an inconsistent state.")
+                    return
+                }
+            } catch {
+                reply(-1, "post-initialize verification failed: \(error)")
+                return
+            }
+            reply(0, initializeOutput)
+        }
+    }
+
+    /// The four partitions `pfsshell initialize` is supposed to build (see
+    /// hddFormat/do_initialize in the vendored pfsshell submodule). Checked
+    /// via APATOCParsing (Sources/Shared) -- the same TOC-parsing logic
+    /// PS1GameService.partitionNames uses in the main app target, shared
+    /// rather than duplicated since this daemon target (mac-hdl-gui-helper)
+    /// already compiles Sources/Shared (see project.yml).
+    private static let expectedBaseLayoutPartitionNames = ["__net", "__system", "__sysconf", "__common"]
+
+    /// One-shot argv invocation of hdl-dump's `inject_mbr`. Always follows
+    /// initializeBlankAPADisk in FreeHDBootService's orchestration -- this
+    /// method does not itself verify a valid `__mbr` header exists first
+    /// (hdl_dump's own apa_initialize_ex already fails cleanly if it
+    /// doesn't; no need to duplicate that check here).
+    func injectMBR(devicePath: String, mbrKelfPath: String, with reply: @escaping (Int32, String) -> Void) {
+        Task {
+            let targetsBootDisk = await isBootDisk(devicePath: devicePath)
+            guard !targetsBootDisk else {
+                reply(115, "refused: target is the boot disk")
+                return
+            }
+            do {
+                let result = try await runner.run(
+                    binary: try HelperToolBinaryLocator.resolve(),
+                    arguments: ["inject_mbr", devicePath, mbrKelfPath],
+                    workingDirectory: FileManager.default.temporaryDirectory,
+                    onOutputLine: { [weak self] line in self?.progressDelegate?.didReceiveOutputLine(line) },
+                    trackForCancellation: false
+                )
+                reply(result.exitCode, result.stderr)
+            } catch {
+                reply(-1, "launch failed: \(error)")
             }
         }
     }
@@ -192,7 +302,7 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
 
     func putPFSFile(devicePath: String, partitionName: String, localSourcePath: String, pfsDestPath: String, with reply: @escaping (Int32, String) -> Void) {
         Task {
-            guard Self.isValidPFSPartitionName(partitionName) else {
+            guard Self.isValidPFSPartitionNameForFileWrite(partitionName) else {
                 reply(115, "refused: invalid PFS partition name '\(partitionName)'")
                 return
             }
@@ -251,7 +361,7 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// just removing one file.
     func removePFSFile(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Int32, String) -> Void) {
         Task {
-            guard Self.isValidPFSPartitionName(partitionName) else {
+            guard Self.isValidPFSPartitionNameForPartitionOps(partitionName) else {
                 reply(115, "refused: invalid PFS partition name '\(partitionName)'")
                 return
             }
@@ -309,12 +419,33 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// `__.POPS1`-`__.POPS10`), the shared system-files partition
     /// (`__common`), and OPL's own dedicated partition (`+OPL`, used for
     /// PS2 cover art -- see PFSDestinationPaths.oplPartitionName).
-    private static func isValidPFSPartitionName(_ name: String) -> Bool {
+    ///
+    /// Used by createPOPSPartition (creates a new partition) and
+    /// removePFSFile (deletes a file). Deliberately does NOT include
+    /// `__system`/`__sysconf` -- see isValidPFSPartitionNameForFileWrite,
+    /// used only by putPFSFile, for those. Widening this shared list to
+    /// include them too would let removePFSFile delete a file out of
+    /// FreeHDBoot's own boot partitions, and let createPOPSPartition carve a
+    /// new partition out of __sysconf's space -- neither operation has any
+    /// legitimate reason to touch those partitions, so each gets its own
+    /// narrowly-scoped allowlist instead of one list shared across
+    /// structurally different operations.
+    private static func isValidPFSPartitionNameForPartitionOps(_ name: String) -> Bool {
         if name == "__.POPS" || name == "__common" || name == "+OPL" { return true }
         for suffix in 1...10 where name == "__.POPS\(suffix)" {
             return true
         }
         return false
+    }
+
+    /// Used only by putPFSFile. Everything isValidPFSPartitionNameForPartitionOps
+    /// allows, plus `__system`/`__sysconf` -- both created by
+    /// initializeBlankAPADisk's `pfsshell initialize`, and the only two
+    /// partitions FreeHDBoot's payload files (see FreeHDBootDestinationPaths)
+    /// ever write into. Never `__net`, which nothing in this app writes to.
+    private static func isValidPFSPartitionNameForFileWrite(_ name: String) -> Bool {
+        if isValidPFSPartitionNameForPartitionOps(name) { return true }
+        return name == "__system" || name == "__sysconf"
     }
 
     /// pfsshell's REPL has no discrete per-command exit code the way hdl_dump's

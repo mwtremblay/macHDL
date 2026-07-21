@@ -88,6 +88,31 @@ static void build_pfs_path(char *out, size_t out_size, const char *subpath)
         snprintf(out, out_size, "%s/%s", IOMANX_MOUNT_POINT, subpath);
 }
 
+/* Creates every path component of `dir_path` in order (e.g. "pfs0:/POPS/ART"
+ * creates "pfs0:/POPS" then "pfs0:/POPS/ART"), not just the final component.
+ * iomanX_mkdir (like POSIX mkdir) only creates one directory level and
+ * requires its immediate parent to already exist -- a single
+ * mkdir("pfs0:/POPS/ART") call silently fails when "POPS" doesn't already
+ * exist yet (e.g. installing PS1 cover art before anything else has ever
+ * written into __common on a freshly-initialized drive), and the open()
+ * below then fails with ENOENT. Confirmed as the real cause of exactly that
+ * failure on real hardware, not guessed. Best-effort per level, matching
+ * this function's existing "already exists is the expected steady-state
+ * outcome" semantics -- modifies dir_path in place but always restores it
+ * before returning. */
+static void mkdir_recursive(char *dir_path)
+{
+    char *p = dir_path + strlen(IOMANX_MOUNT_POINT) + 1;
+    for (; *p; p++) {
+        if (*p == '/') {
+            *p = '\0';
+            iomanX_mkdir(dir_path, 0777);
+            *p = '/';
+        }
+    }
+    iomanX_mkdir(dir_path, 0777);
+}
+
 static int cmd_put(const char *partition_name, const char *pfs_dest_dir, const char *pfs_dest_filename, const char *local_source_path)
 {
     int in_file = open(local_source_path, O_RDONLY);
@@ -110,7 +135,7 @@ static int cmd_put(const char *partition_name, const char *pfs_dest_dir, const c
         /* Best-effort: "already exists" is the expected outcome on every
          * call after the first for a given directory. Only a subsequent
          * open() failure below is treated as a real error. */
-        iomanX_mkdir(dir_path, 0777);
+        mkdir_recursive(dir_path);
         snprintf(dest_path, sizeof(dest_path), "%s/%s", dir_path, pfs_dest_filename);
     } else {
         build_pfs_path(dest_path, sizeof(dest_path), pfs_dest_filename);

@@ -55,11 +55,37 @@ enum HDLDumpHelperConstants {
 
     /// Allocates and formats a new PFS partition for PS1 games via pfsshell's
     /// `mkpart <name> <size> PFS` -- never via `initialize`, which reformats
-    /// the entire disk's APA scheme and must never be reachable from any
-    /// client input (see HDLDumpHelperService's implementation notes).
+    /// the entire disk's APA scheme (see initializeBlankAPADisk below for the
+    /// one, narrowly-gated exception to that).
     /// partitionName is independently validated server-side against
     /// "__.POPS"/"__.POPS1"-"__.POPS10" -- never trusted as-is from the client.
     func createPOPSPartition(devicePath: String, partitionName: String, sizeBytes: Int64, with reply: @escaping (Int32, String) -> Void)
+
+    /// Wraps pfsshell's `initialize yes` -- the single most dangerous
+    /// operation this app exposes. Rebuilds the disk's entire APA scheme
+    /// from scratch (`__mbr` + `__net`/`__system`/`__sysconf`/`__common`,
+    /// each auto-formatted as PFS -- see hddFormat/do_initialize in the
+    /// vendored pfsshell submodule), destroying whatever was on the disk
+    /// before. Does not itself require the disk to be blank -- like every
+    /// other destructive operation in this protocol, that's an informed
+    /// choice surfaced to the user in the UI (FreeHDBootSetupSheet), not a
+    /// server-side precondition. Only the boot-disk check is unconditional.
+    ///
+    /// Success is not just "pfsshell's REPL didn't print an error" -- see
+    /// HDLDumpHelperService's implementation for why that alone can't be
+    /// trusted (pfsshell's own `do_initialize` silently discards the format
+    /// result for three of the four partitions it builds), and for the
+    /// independent `hdl_dump toc` verification this runs before ever
+    /// reporting success back to the caller.
+    func initializeBlankAPADisk(devicePath: String, with reply: @escaping (Int32, String) -> Void)
+
+    /// Wraps hdl-dump's `inject_mbr <device> <mbr_kelf_path>` -- writes a
+    /// bootstrap KELF into the `__mbr` partition's OSD slot (see
+    /// apa_initialize_ex in Vendor/hdl-dump/apa.c). Requires a valid `__mbr`
+    /// header to already exist at sector 0, so this is only ever meaningful
+    /// immediately after initializeBlankAPADisk, never standalone -- it does
+    /// not itself build a partition table.
+    func injectMBR(devicePath: String, mbrKelfPath: String, with reply: @escaping (Int32, String) -> Void)
 
     /// Directory entry names at the given path within the partition, via
     /// `pfsutil` (a one-shot argv-based CLI, see

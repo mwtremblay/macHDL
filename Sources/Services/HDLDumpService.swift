@@ -96,7 +96,7 @@ final class HDLDumpService {
     /// defense in depth, not duplication to clean up.
     private func guardNotBootDisk(_ disk: Disk) async throws {
         if await discovery.isBootDisk(deviceIdentifier: disk.deviceIdentifier) {
-            throw HDLDumpError.operationNotAllowed
+            throw HDLDumpError.operationNotAllowed(message: HDLDumpError.bootDiskRefusalMessage)
         }
     }
 

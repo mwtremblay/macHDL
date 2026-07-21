@@ -10,3 +10,6 @@
 [submodule "Vendor/psx-vcd"]
 	path = Vendor/psx-vcd
 	url = https://github.com/leji-a/psx-vcd.git
+[submodule "Vendor/FreeMcBoot-Installer"]
+	path = Vendor/FreeMcBoot-Installer
+	url = https://github.com/israpps/FreeMcBoot-Installer.git
