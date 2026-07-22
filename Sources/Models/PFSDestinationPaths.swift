@@ -77,6 +77,29 @@ enum PFSDestinationPaths {
     static let oplPartitionName = "+OPL"
     static let oplArtSubdirectory = "ART"
 
+    /// FreeMcBoot/FreeHDBoot homebrew "apps" (ELF applications) -- confirmed
+    /// against OPL's own `sbCreateFolders()` (src/supportbase.c), which lists
+    /// `APPS` as a top-level folder sibling to `ART`/`CFG`/`VMC`/etc. under
+    /// whichever partition OPL manages, same as `oplArtSubdirectory` above.
+    /// Each installed app is its own subfolder here (e.g. `APPS/wLaunchELF/`),
+    /// preserving whatever internal folder structure the app's own archive
+    /// had.
+    static let oplAppsSubdirectory = "APPS"
+
+    /// Builds the PFS-side destination path for one file within an installed
+    /// app, e.g. `oplAppPFSPath(appFolderName: "wLaunchELF", relativePath:
+    /// "CFG/theme.cfg")` -> `"APPS/wLaunchELF/CFG/theme.cfg"`.
+    static func oplAppPFSPath(appFolderName: String, relativePath: String) -> String {
+        "\(oplAppsSubdirectory)/\(appFolderName)/\(relativePath)"
+    }
+
+    /// The PFS-side path for an installed app's own folder, e.g.
+    /// `oplAppFolderPFSPath(appFolderName: "wLaunchELF")` -> `"APPS/wLaunchELF"`.
+    /// Used for recursive delete.
+    static func oplAppFolderPFSPath(appFolderName: String) -> String {
+        "\(oplAppsSubdirectory)/\(appFolderName)"
+    }
+
     /// PS2 cover art is keyed by Game ID (e.g. `SLES_544.39`), confirmed
     /// against the official OPL docs (ps2homebrew.org/Open-PS2-Loader-User-
     /// Guide/art.html): `<game_ID>_COV.{jpg|png}`. This app only ever writes
@@ -156,4 +179,31 @@ enum PFSDestinationPaths {
     static var patch5BinPFSPath: String { "\(popsSubdirectory)/\(patch5BinFilename)" }
     static var popsPakPFSPath: String { "\(popsSubdirectory)/\(popsPakFilename)" }
     static var popsIoxPakPFSPath: String { "\(popsSubdirectory)/\(popsIoxPakFilename)" }
+
+    /// Simple Media System (SMS) is a general-purpose PFS file/media browser,
+    /// not a fixed-path scanner -- confirmed by reading its own source
+    /// (src/SMS_GUIDevMenu.c), it just lists whatever partitions/directories
+    /// exist on a device. `SMS_Media` isn't a technical requirement, but it
+    /// is SMS's own precedent: its README changelog names this exact
+    /// partition as the convention for HDD-resident media. Adopted here as a
+    /// dedicated partition, matching this app's existing one-partition-per-
+    /// content-type pattern (`__.POPS`, `+OPL`). Videos sit flat at the
+    /// partition root, same as `__.POPS`'s VCDs -- no subdirectory.
+    static let smsMediaPartitionName = "SMS_Media"
+
+    /// No externally-imposed default the way `+OPL`'s 128MB mirrors OPL's own
+    /// auto-create size -- chosen generously since converted videos (even at
+    /// SD bitrates) run much larger than PS1 VCDs or homebrew apps. Already a
+    /// clean multiple of 128MB (32 * 128MB), matching APA's alignment
+    /// requirement (see PFSPartitionSizing).
+    static let smsMediaPartitionSizeBytes: Int64 = 4 * 1024 * 1024 * 1024
+
+    /// The PFS-side path for a video file at the `SMS_Media` partition root,
+    /// e.g. `smsMediaVideoPFSPath(filename: "Movie.avi")` -> `"Movie.avi"`.
+    /// A thin, named wrapper (rather than callers using the filename
+    /// directly) so the "flat at partition root" convention is documented and
+    /// enforced in one place, matching every other PFS-path builder here.
+    static func smsMediaVideoPFSPath(filename: String) -> String {
+        filename
+    }
 }

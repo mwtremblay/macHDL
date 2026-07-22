@@ -13,3 +13,9 @@
 [submodule "Vendor/FreeMcBoot-Installer"]
 	path = Vendor/FreeMcBoot-Installer
 	url = https://github.com/israpps/FreeMcBoot-Installer.git
+[submodule "Vendor/XADMaster"]
+	path = Vendor/XADMaster
+	url = https://github.com/MacPaw/XADMaster.git
+[submodule "Vendor/universal-detector"]
+	path = Vendor/universal-detector
+	url = https://github.com/MacPaw/universal-detector.git

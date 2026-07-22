@@ -300,10 +300,41 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
         }
     }
 
+    /// Directory-only entry names at the given path -- a sibling to
+    /// listPFSFiles for callers (the Apps feature's `+OPL/APPS/` listing)
+    /// that need to know an entry is actually a folder, not just its name.
+    /// listPFSFiles's own reply type already discards that distinction
+    /// (plainDirectoryEntries), and that's a working, hardware-verified path
+    /// used by PS1 game listing today -- adding a new method here rather
+    /// than changing listPFSFiles's contract.
+    func listPFSDirectories(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping ([String]?, Int32, String) -> Void) {
+        Task {
+            do {
+                let result = try await runner.run(
+                    binary: try HelperToolBinaryLocator.resolvePFSUtil(),
+                    arguments: ["list", devicePath, partitionName, pfsPath],
+                    workingDirectory: FileManager.default.temporaryDirectory,
+                    onOutputLine: nil,
+                    trackForCancellation: false
+                )
+                let names = result.exitCode == 0
+                    ? Self.rawDirectoryEntries(in: result.stdout).filter(\.isDirectory).map(\.name)
+                    : nil
+                reply(names, result.exitCode, result.stderr)
+            } catch {
+                reply(nil, -1, "launch failed: \(error)")
+            }
+        }
+    }
+
     func putPFSFile(devicePath: String, partitionName: String, localSourcePath: String, pfsDestPath: String, with reply: @escaping (Int32, String) -> Void) {
         Task {
             guard Self.isValidPFSPartitionNameForFileWrite(partitionName) else {
                 reply(115, "refused: invalid PFS partition name '\(partitionName)'")
+                return
+            }
+            guard Self.isValidPFSDestinationPath(pfsDestPath) else {
+                reply(115, "refused: invalid PFS destination path '\(pfsDestPath)'")
                 return
             }
             let targetsBootDisk = await isBootDisk(devicePath: devicePath)
@@ -365,6 +396,10 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
                 reply(115, "refused: invalid PFS partition name '\(partitionName)'")
                 return
             }
+            guard Self.isValidPFSDestinationPath(pfsPath) else {
+                reply(115, "refused: invalid PFS path '\(pfsPath)'")
+                return
+            }
             let targetsBootDisk = await isBootDisk(devicePath: devicePath)
             guard !targetsBootDisk else {
                 reply(115, "refused: target is the boot disk")
@@ -374,6 +409,42 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
                 let result = try await runner.run(
                     binary: try HelperToolBinaryLocator.resolvePFSUtil(),
                     arguments: ["rm", devicePath, partitionName, pfsPath],
+                    workingDirectory: FileManager.default.temporaryDirectory,
+                    onOutputLine: nil,
+                    trackForCancellation: false
+                )
+                reply(result.exitCode, result.stderr)
+            } catch {
+                reply(-1, "launch failed: \(error)")
+            }
+        }
+    }
+
+    /// Recursively removes an entire directory tree (files and
+    /// subdirectories, bottom-up, via `pfsutil rmtree`) -- e.g. deleting an
+    /// installed homebrew app's whole folder under `+OPL/APPS/<name>`.
+    /// Unlike removePFSFile (single file only), this can remove non-empty
+    /// directories. Same partition allowlist/boot-disk guard as
+    /// removePFSFile.
+    func removePFSTree(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Int32, String) -> Void) {
+        Task {
+            guard Self.isValidPFSPartitionNameForPartitionOps(partitionName) else {
+                reply(115, "refused: invalid PFS partition name '\(partitionName)'")
+                return
+            }
+            guard Self.isValidPFSDestinationPath(pfsPath) else {
+                reply(115, "refused: invalid PFS path '\(pfsPath)'")
+                return
+            }
+            let targetsBootDisk = await isBootDisk(devicePath: devicePath)
+            guard !targetsBootDisk else {
+                reply(115, "refused: target is the boot disk")
+                return
+            }
+            do {
+                let result = try await runner.run(
+                    binary: try HelperToolBinaryLocator.resolvePFSUtil(),
+                    arguments: ["rmtree", devicePath, partitionName, pfsPath],
                     workingDirectory: FileManager.default.temporaryDirectory,
                     onOutputLine: nil,
                     trackForCancellation: false
@@ -417,8 +488,16 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// mutating operation -- restrict to the documented PopStarter
     /// convention: the games partition (`__.POPS`, plus overflow
     /// `__.POPS1`-`__.POPS10`), the shared system-files partition
-    /// (`__common`), and OPL's own dedicated partition (`+OPL`, used for
-    /// PS2 cover art -- see PFSDestinationPaths.oplPartitionName).
+    /// (`__common`), OPL's own dedicated partition (`+OPL`, used for
+    /// PS2 cover art -- see PFSDestinationPaths.oplPartitionName),
+    /// FreeHDBoot's own dedicated apps partition (`PP.FHDB.APPS`, the exact
+    /// name FreeHDBoot's own stock FREEHDB.CNF expects for OPL/uLaunchELF/
+    /// SMS -- see FreeHDBootDestinationPaths.fhdbAppsPartitionName), and the
+    /// video-import feature's dedicated `SMS_Media` partition (see
+    /// PFSDestinationPaths.smsMediaPartitionName's doc comment) -- this one
+    /// was missing here despite PS1GameService.createSMSMediaPartitionIfNeeded/
+    /// SMSMediaService already depending on it, which made every video
+    /// install fail with "refused: invalid PFS partition name 'SMS_Media'".
     ///
     /// Used by createPOPSPartition (creates a new partition) and
     /// removePFSFile (deletes a file). Deliberately does NOT include
@@ -431,7 +510,7 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// narrowly-scoped allowlist instead of one list shared across
     /// structurally different operations.
     private static func isValidPFSPartitionNameForPartitionOps(_ name: String) -> Bool {
-        if name == "__.POPS" || name == "__common" || name == "+OPL" { return true }
+        if name == "__.POPS" || name == "__common" || name == "+OPL" || name == "PP.FHDB.APPS" || name == "SMS_Media" { return true }
         for suffix in 1...10 where name == "__.POPS\(suffix)" {
             return true
         }
@@ -446,6 +525,26 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     private static func isValidPFSPartitionNameForFileWrite(_ name: String) -> Bool {
         if isValidPFSPartitionNameForPartitionOps(name) { return true }
         return name == "__system" || name == "__sysconf"
+    }
+
+    /// Never trust a client-supplied PFS *path* either, the same reasoning as
+    /// the partition-name allowlists above. `AppsService`/`SMSMediaService`
+    /// build these paths by interpolating user-typed text (an app folder
+    /// name, a video filename) with no client-side traversal guard, and
+    /// neither this file's own dir/filename split nor pfsutil.c's
+    /// build_pfs_path collapse or reject `.`/`..` segments -- confirmed by
+    /// reading both directly. Rejects empty paths too, since an empty path
+    /// reaching removePFSTree would rmtree an entire partition's root.
+    /// Also caps overall length: pfsutil.c joins this path into fixed-size
+    /// C buffers (`dir_path[512]`, `dest_path[768]`) via `snprintf`, which
+    /// truncates rather than overflows -- not a memory-safety bug, but an
+    /// absurdly long path would silently truncate and operate on the wrong
+    /// (truncated) destination instead of failing loudly. 400 bytes leaves
+    /// comfortable headroom under both buffers' limits.
+    private static func isValidPFSDestinationPath(_ path: String) -> Bool {
+        let components = path.split(separator: "/")
+        guard !components.isEmpty, path.utf8.count <= 400 else { return false }
+        return !components.contains(".") && !components.contains("..")
     }
 
     /// pfsshell's REPL has no discrete per-command exit code the way hdl_dump's

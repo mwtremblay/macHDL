@@ -7,31 +7,24 @@ import Foundation
 /// putFile/guardNotBootDisk/throwIfFailed, widened from private to internal
 /// for this purpose) via composition, rather than duplicating them.
 final class GameArtworkService {
-    /// OPL auto-creates a 128MB `+OPL` partition when it first runs and
-    /// finds none configured -- matching that default size here so this
-    /// app's own creation (if OPL hasn't run yet) looks identical to what
-    /// OPL itself would have made.
-    static let oplPartitionSizeBytes: Int64 = 128_000_000
-
     private let ps1Service: PS1GameService
 
     init(ps1Service: PS1GameService) {
         self.ps1Service = ps1Service
     }
 
+    /// Forwards to PS1GameService -- hoisted there so the Apps feature's
+    /// AppsService can create the same `+OPL` partition without depending on
+    /// this (artwork-specific) service. Kept here too since GameListViewModel
+    /// already depends on GameArtworkService, not PS1GameService directly.
     func createOPLPartitionIfNeeded(on disk: Disk) async throws {
-        guard try await !ps1Service.partitionExists(named: PFSDestinationPaths.oplPartitionName, on: disk) else { return }
-        try await ps1Service.createPartition(
-            name: PFSDestinationPaths.oplPartitionName,
-            sizeBytes: Self.oplPartitionSizeBytes,
-            on: disk
-        )
+        try await ps1Service.createOPLPartitionIfNeeded(on: disk)
     }
 
     /// Writes `imageData` to `+OPL/ART/<gameID>_COV.png`.
     func installPS2CoverArt(gameID: String, imageData: Data, on disk: Disk) async throws {
         try await ps1Service.guardNotBootDisk(disk)
-        try await createOPLPartitionIfNeeded(on: disk)
+        try await ps1Service.createOPLPartitionIfNeeded(on: disk)
         let localURL = try writeToScratchFile(imageData, named: PFSDestinationPaths.oplCoverArtFilename(forGameID: gameID))
         defer { try? FileManager.default.removeItem(at: localURL.deletingLastPathComponent()) }
         try await ps1Service.putFile(

@@ -17,10 +17,22 @@ enum FreeHDBootDestinationPaths {
     static let sysconfPartitionName = "__sysconf"
     static let commonPartitionName = "__common"
 
+    /// FreeHDBoot's own dedicated apps partition -- not part of the fixed
+    /// set `pfsshell initialize yes` auto-creates, so FreeHDBootService
+    /// creates it explicitly (see PS1GameService.createFHDBAppsPartitionIfNeeded)
+    /// before writing into it. Named `PP.FHDB.APPS` to match exactly what
+    /// this app's own forked `FREEHDB.CNF` (see the `FREEHDB`/`CNF` payload
+    /// entry below) points its OSD menu paths at for OPL/SMS -- confirmed
+    /// against the vendored stock FREEHDB.CNF's own `LK_L1_E3`/
+    /// `path3_OSDSYS_ITEM_3` entries, not invented by this app.
+    static let fhdbAppsPartitionName = "PP.FHDB.APPS"
+
     static let fmcbSysconfSubdirectory = "FMCB"
     static let fsckSubdirectory = "fsck"
     static let fsckLangSubdirectory = "fsck/lang"
     static let osdSubdirectory = "osd"
+    static let fhdbAppsOPLSubdirectory = "OPL"
+    static let fhdbAppsSMSSubdirectory = "SMS"
 
     /// The bundled resource (by `Bundle.main.url(forResource:withExtension:)`
     /// name) that must be installed via `hdl_dump inject_mbr`, never as a
@@ -35,7 +47,12 @@ enum FreeHDBootDestinationPaths {
     /// One entry per file `installer/system.c` copies onto the HDD, keyed by
     /// the bundled resource's name/extension (see project.yml's FreeHDBoot
     /// resource entries, all sourced from
-    /// `Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/`).
+    /// `Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/`), plus the
+    /// three "core" homebrew apps (uLaunchELF, OPL, SMS) this app's forked
+    /// `FREEHDB.CNF` OSD menu expects to find already installed -- see
+    /// Resources/FreeHDBoot/ and this file's `FREEHDB`/`CNF` entry, whose
+    /// `resourceName`/`resourceExtension` now resolve to the project-owned
+    /// fork rather than the vendored stock file.
     struct PayloadFile {
         let resourceName: String
         let resourceExtension: String
@@ -68,5 +85,14 @@ enum FreeHDBootDestinationPaths {
         PayloadFile(resourceName: "FMCB_CFG", resourceExtension: "ELF", partitionName: sysconfPartitionName, pfsPath: "\(fmcbSysconfSubdirectory)/FMCB_CFG.ELF"),
         PayloadFile(resourceName: "USBD", resourceExtension: "IRX", partitionName: sysconfPartitionName, pfsPath: "\(fmcbSysconfSubdirectory)/USBD.IRX"),
         PayloadFile(resourceName: "USBHDFSD", resourceExtension: "IRX", partitionName: sysconfPartitionName, pfsPath: "\(fmcbSysconfSubdirectory)/USBHDFSD.IRX"),
+
+        // "Core" apps the forked FREEHDB.CNF's OSD menu expects -- see
+        // fhdbAppsPartitionName's doc comment. uLaunchELF's paths (item 1)
+        // are unchanged from FreeMcBoot's own stock config, so it goes into
+        // __sysconf/FMCB/ alongside FreeHDBoot's own files, not the new
+        // partition; OPL and SMS (items 2 and 4) go into PP.FHDB.APPS.
+        PayloadFile(resourceName: "ULE_ISR", resourceExtension: "ELF", partitionName: sysconfPartitionName, pfsPath: "\(fmcbSysconfSubdirectory)/BOOT.ELF"),
+        PayloadFile(resourceName: "OPL110", resourceExtension: "ELF", partitionName: fhdbAppsPartitionName, pfsPath: "\(fhdbAppsOPLSubdirectory)/OPNPS2LD.ELF"),
+        PayloadFile(resourceName: "SMS", resourceExtension: "ELF", partitionName: fhdbAppsPartitionName, pfsPath: "\(fhdbAppsSMSSubdirectory)/SMS.ELF"),
     ]
 }

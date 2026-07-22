@@ -154,6 +154,14 @@ final class HDLDumpHelperClient {
         }
     }
 
+    func listPFSDirectories(devicePath: String, partitionName: String, pfsPath: String) async throws -> (names: [String]?, exitCode: Int32, stderr: String) {
+        try await performCall { helper, complete in
+            helper.listPFSDirectories(devicePath: devicePath, partitionName: partitionName, pfsPath: pfsPath) { names, exitCode, stderr in
+                complete(.success((names, exitCode, stderr)))
+            }
+        }
+    }
+
     func putPFSFile(devicePath: String, partitionName: String, localSourcePath: String, pfsDestPath: String) async throws -> (exitCode: Int32, stderr: String) {
         try await performCall { helper, complete in
             helper.putPFSFile(devicePath: devicePath, partitionName: partitionName, localSourcePath: localSourcePath, pfsDestPath: pfsDestPath) { exitCode, stderr in
@@ -173,6 +181,14 @@ final class HDLDumpHelperClient {
     func removePFSFile(devicePath: String, partitionName: String, pfsPath: String) async throws -> (exitCode: Int32, stderr: String) {
         try await performCall { helper, complete in
             helper.removePFSFile(devicePath: devicePath, partitionName: partitionName, pfsPath: pfsPath) { exitCode, stderr in
+                complete(.success((exitCode, stderr)))
+            }
+        }
+    }
+
+    func removePFSTree(devicePath: String, partitionName: String, pfsPath: String) async throws -> (exitCode: Int32, stderr: String) {
+        try await performCall { helper, complete in
+            helper.removePFSTree(devicePath: devicePath, partitionName: partitionName, pfsPath: pfsPath) { exitCode, stderr in
                 complete(.success((exitCode, stderr)))
             }
         }

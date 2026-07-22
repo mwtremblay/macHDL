@@ -71,13 +71,23 @@ targets:
         buildPhase: resources
       - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYSTEM/FSCK/LANG/labels_PO.txt
         buildPhase: resources
-      - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/FREEHDB.CNF
-        buildPhase: resources
       - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/FMCB_CFG.ELF
         buildPhase: resources
       - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/USBD.IRX
         buildPhase: resources
       - path: Vendor/FreeMcBoot-Installer/installer_res/1966/INSTALL/SYS-CONF/USBHDFSD.IRX
+        buildPhase: resources
+      # macHDL-maintained fork of FREEHDB.CNF (customized OSD menu -- see
+      # FreeHDBootDestinationPaths.swift) plus the 3 "core" homebrew apps
+      # (uLaunchELF, OPL, SMS) that menu points at, sourced from the same
+      # vendored FreeMcBoot-Installer submodule as everything else above.
+      - path: Resources/FreeHDBoot/FREEHDB.CNF
+        buildPhase: resources
+      - path: Resources/FreeHDBoot/ULE_ISR.ELF
+        buildPhase: resources
+      - path: Resources/FreeHDBoot/OPL110.ELF
+        buildPhase: resources
+      - path: Resources/FreeHDBoot/SMS.ELF
         buildPhase: resources
     dependencies:
       - target: mac-hdl-gui-helper
@@ -89,8 +99,8 @@ targets:
         PRODUCT_NAME: macHDL
         CODE_SIGN_ENTITLEMENTS: macHDL.entitlements
         GENERATE_INFOPLIST_FILE: YES
-        MARKETING_VERSION: "1.0.3"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0.4"
+        CURRENT_PROJECT_VERSION: "2"
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         ENABLE_APP_SANDBOX: NO
@@ -139,6 +149,25 @@ targets:
           - "$(SRCROOT)/Vendor/psx-vcd/src/utils.rs"
         outputFiles:
           - "$(CODESIGNING_FOLDER_PATH)/Contents/Resources/psxvcd-bin/psx-vcd"
+        basedOnDependencyAnalysis: false
+      - name: "Build & Embed unar"
+        script: |
+          "${SRCROOT}/Scripts/build-unar.sh"
+        inputFiles:
+          - "$(SRCROOT)/Vendor/XADMaster/XADMaster.xcodeproj/project.pbxproj"
+          - "$(SRCROOT)/Vendor/XADMaster/unar.m"
+          - "$(SRCROOT)/Vendor/universal-detector/UniversalDetector.m"
+        outputFiles:
+          - "$(CODESIGNING_FOLDER_PATH)/Contents/Resources/unar-bin/unar"
+        basedOnDependencyAnalysis: false
+      - name: "Build & Embed ffmpeg"
+        script: |
+          "${SRCROOT}/Scripts/build-ffmpeg.sh"
+        inputFiles:
+          - "$(SRCROOT)/Vendor/ffmpeg-src/ffmpeg-8.1.2.tar.xz"
+          - "$(SRCROOT)/Vendor/lame-src/lame-4.0.tar.gz"
+        outputFiles:
+          - "$(CODESIGNING_FOLDER_PATH)/Contents/Resources/ffmpeg-bin/ffmpeg"
         basedOnDependencyAnalysis: false
     postCompileScripts:
       - name: "Embed Privileged Helper"

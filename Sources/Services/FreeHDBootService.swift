@@ -79,6 +79,9 @@ final class FreeHDBootService {
         progress?("Installing FreeHDBoot bootloader…")
         try await injectBootloader(on: disk, progress: progress)
 
+        progress?("Creating apps partition…")
+        try await createCoreAppsPartition(on: disk)
+
         try await installPayloadFiles(on: disk, progress: progress)
     }
 
@@ -113,6 +116,16 @@ final class FreeHDBootService {
         }
         let (exitCode, stderr) = try await helper.injectMBR(devicePath: disk.devicePath, mbrKelfPath: mbrKelfURL.path, onProgress: progress)
         try throwPossiblyDiskCorrupting(exitCode: exitCode, stderr: stderr)
+    }
+
+    /// `PP.FHDB.APPS` isn't part of the fixed set `pfsshell initialize yes`
+    /// auto-creates, so it needs its own explicit creation step -- same
+    /// "ordinary failure, not partition-table-level" reasoning as
+    /// installPayloadFiles below, since by this point the base APA/PFS
+    /// layout is already known-good.
+    func createCoreAppsPartition(on disk: Disk) async throws {
+        try await ps1Service.guardNotBootDisk(disk)
+        try await ps1Service.createFHDBAppsPartitionIfNeeded(on: disk)
     }
 
     /// By the time this runs, initializeAPA has already verified the base

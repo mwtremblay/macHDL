@@ -95,6 +95,14 @@ enum HDLDumpHelperConstants {
     /// project memory for the full incident history. exit code, stderr.
     func listPFSFiles(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping ([String]?, Int32, String) -> Void)
 
+    /// Directory-only entry names at the given path within the partition --
+    /// e.g. listing `+OPL/APPS/` where every entry is expected to be an
+    /// installed app's own folder, never a loose file. Sibling to
+    /// listPFSFiles, which discards the file/directory distinction; this
+    /// doesn't change that existing, already-hardware-verified method's
+    /// contract.
+    func listPFSDirectories(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping ([String]?, Int32, String) -> Void)
+
     func putPFSFile(devicePath: String, partitionName: String, localSourcePath: String, pfsDestPath: String, with reply: @escaping (Int32, String) -> Void)
 
     /// Reads a single file's contents back from a PFS partition into memory
@@ -110,6 +118,15 @@ enum HDLDumpHelperConstants {
     /// game's VCD sits directly at the partition root, see
     /// PFSDestinationPaths).
     func removePFSFile(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Int32, String) -> Void)
+
+    /// Recursively removes an entire directory tree at the given path within
+    /// the partition (files and subdirectories, bottom-up) -- e.g. deleting
+    /// an installed homebrew app's whole folder under `+OPL/APPS/<name>`.
+    /// Unlike removePFSFile (single file only), this walks and deletes an
+    /// arbitrary subtree. Same partition-name allowlist as removePFSFile/
+    /// createPOPSPartition (isValidPFSPartitionNameForPartitionOps) -- never
+    /// trusted as-is from the client.
+    func removePFSTree(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Int32, String) -> Void)
 }
 
 /// Exported by the client so the daemon's remoteObjectProxy can call back with

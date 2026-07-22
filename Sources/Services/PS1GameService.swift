@@ -104,6 +104,42 @@ final class PS1GameService {
         try await createPartition(name: PFSDestinationPaths.commonPartitionName, sizeBytes: sizeBytes, on: disk)
     }
 
+    /// OPL auto-creates a 128MB `+OPL` partition when it first runs and finds
+    /// none configured -- matching that default size here so this app's own
+    /// creation (if OPL hasn't run yet) looks identical to what OPL itself
+    /// would have made. Hoisted here (from GameArtworkService, where it
+    /// originated for cover art) so the Apps feature's AppsService can create
+    /// this same partition without an artwork-service dependency that has
+    /// nothing to do with artwork.
+    static let oplPartitionSizeBytes: Int64 = 128_000_000
+
+    /// Shared "check-then-create" body for createOPLPartitionIfNeeded/
+    /// createSMSMediaPartitionIfNeeded/createFHDBAppsPartitionIfNeeded below
+    /// -- each just fixes the name/size arguments.
+    private func createPartitionIfNeeded(name: String, sizeBytes: Int64, on disk: Disk) async throws {
+        guard try await !partitionExists(named: name, on: disk) else { return }
+        try await createPartition(name: name, sizeBytes: sizeBytes, on: disk)
+    }
+
+    func createOPLPartitionIfNeeded(on disk: Disk) async throws {
+        try await createPartitionIfNeeded(name: PFSDestinationPaths.oplPartitionName, sizeBytes: Self.oplPartitionSizeBytes, on: disk)
+    }
+
+    /// The dedicated `SMS_Media` partition for converted video files -- see
+    /// PFSDestinationPaths.smsMediaPartitionName's doc comment.
+    func createSMSMediaPartitionIfNeeded(on disk: Disk) async throws {
+        try await createPartitionIfNeeded(name: PFSDestinationPaths.smsMediaPartitionName, sizeBytes: PFSDestinationPaths.smsMediaPartitionSizeBytes, on: disk)
+    }
+
+    /// FreeHDBoot's own dedicated apps partition -- the exact `PP.FHDB.APPS`
+    /// name its stock `FREEHDB.CNF` OSD menu paths expect (see
+    /// FreeHDBootDestinationPaths.fhdbAppsPartitionName's doc comment). 128MB
+    /// matches `+OPL`'s own default size since this only ever holds a
+    /// handful of small ELF binaries.
+    func createFHDBAppsPartitionIfNeeded(on disk: Disk) async throws {
+        try await createPartitionIfNeeded(name: FreeHDBootDestinationPaths.fhdbAppsPartitionName, sizeBytes: Self.oplPartitionSizeBytes, on: disk)
+    }
+
     /// Copies the user-supplied POPS.ELF/IOPRP252.IMG (Sony-copyrighted,
     /// never bundled by this app, required) plus this app's own bundled
     /// POPSTARTER.ELF/POPSLOADER.ELF/PATCH_5.BIN (all freely redistributable,
@@ -197,13 +233,7 @@ final class PS1GameService {
     }
 
     func deleteGame(vcdFilename: String, partitionName: String, on disk: Disk) async throws {
-        try await guardNotBootDisk(disk)
-        let (exitCode, stderr) = try await helper.removePFSFile(
-            devicePath: disk.devicePath,
-            partitionName: partitionName,
-            pfsPath: vcdFilename
-        )
-        try throwIfFailed(exitCode: exitCode, stderr: stderr)
+        try await removeFile(partitionName: partitionName, pfsPath: vcdFilename, on: disk)
     }
 
     // MARK: - Helpers
@@ -239,6 +269,62 @@ final class PS1GameService {
             partitionName: partitionName,
             localSourcePath: localURL.path,
             pfsDestPath: pfsPath
+        )
+        try throwIfFailed(exitCode: exitCode, stderr: stderr)
+    }
+
+    /// Directory entry names at pfsPath -- e.g. enumerating `+OPL/APPS/` to
+    /// list installed homebrew apps. See listPFSFiles's doc comment for why
+    /// this goes through pfsutil, not pfsshell's REPL.
+    func listFiles(partitionName: String, pfsPath: String, on disk: Disk) async throws -> [String] {
+        let (names, exitCode, stderr) = try await helper.listPFSFiles(
+            devicePath: disk.devicePath,
+            partitionName: partitionName,
+            pfsPath: pfsPath
+        )
+        try throwIfFailed(exitCode: exitCode, stderr: stderr)
+        return names ?? []
+    }
+
+    /// Directory-only entry names at pfsPath -- e.g. `+OPL/APPS/`, where
+    /// every entry is expected to be an installed app's own folder.
+    func listDirectories(partitionName: String, pfsPath: String, on disk: Disk) async throws -> [String] {
+        let (names, exitCode, stderr) = try await helper.listPFSDirectories(
+            devicePath: disk.devicePath,
+            partitionName: partitionName,
+            pfsPath: pfsPath
+        )
+        try throwIfFailed(exitCode: exitCode, stderr: stderr)
+        return names ?? []
+    }
+
+    /// Removes a single flat file at pfsPath within the partition -- e.g. a
+    /// PS1 game's VCD, or a converted video at the SMS_Media partition root.
+    /// Not for directories: pfsutil's `rm` (unlike `rmtree`) opens its target
+    /// with an iomanX file open, not a directory open, so it would fail
+    /// against a directory the same way rmtree would fail against a plain
+    /// file. Internal, not private -- reused directly by SMSMediaService via
+    /// composition, same reasoning as the other primitives here.
+    func removeFile(partitionName: String, pfsPath: String, on disk: Disk) async throws {
+        try await guardNotBootDisk(disk)
+        let (exitCode, stderr) = try await helper.removePFSFile(
+            devicePath: disk.devicePath,
+            partitionName: partitionName,
+            pfsPath: pfsPath
+        )
+        try throwIfFailed(exitCode: exitCode, stderr: stderr)
+    }
+
+    /// Recursively removes an entire directory tree at pfsPath within the
+    /// partition -- e.g. an installed homebrew app's whole APPS/<name>
+    /// folder. Unlike removeFile (single file), this can remove non-empty
+    /// directories.
+    func removeTree(partitionName: String, pfsPath: String, on disk: Disk) async throws {
+        try await guardNotBootDisk(disk)
+        let (exitCode, stderr) = try await helper.removePFSTree(
+            devicePath: disk.devicePath,
+            partitionName: partitionName,
+            pfsPath: pfsPath
         )
         try throwIfFailed(exitCode: exitCode, stderr: stderr)
     }

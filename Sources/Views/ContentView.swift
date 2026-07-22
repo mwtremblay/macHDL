@@ -4,12 +4,25 @@ import AppKit
 enum GameKind: String, CaseIterable {
     case ps2 = "PS2 Games"
     case ps1 = "PS1 Games"
+    case apps = "Apps"
+    case videos = "Videos"
+
+    /// Apps/Videos have no cover art concept -- always show the "No Artwork"
+    /// placeholder for those kinds.
+    var hasArtwork: Bool {
+        switch self {
+        case .ps2, .ps1: return true
+        case .apps, .videos: return false
+        }
+    }
 }
 
 struct ContentView: View {
     @StateObject private var driveListViewModel = DriveListViewModel()
     @StateObject private var gameListViewModel: GameListViewModel
     @StateObject private var ps1GameListViewModel: PS1GameListViewModel
+    @StateObject private var appsListViewModel: AppsListViewModel
+    @StateObject private var videoListViewModel: VideoListViewModel
     @StateObject private var helperRegistrationViewModel: HelperRegistrationViewModel
 
     @State private var selectedGameKind: GameKind = .ps2
@@ -17,6 +30,8 @@ struct ContentView: View {
     @State private var showingBatchAddGameSheet = false
     @State private var showingAddPS1GameSheet = false
     @State private var showingBatchAddPS1GameSheet = false
+    @State private var showingAddAppSheet = false
+    @State private var showingAddVideoSheet = false
     @State private var showingPopStarterSetupSheet = false
     @State private var showingFreeHDBootSetupSheet = false
     @State private var infoSheetItem: InfoSheetItem?
@@ -32,6 +47,8 @@ struct ContentView: View {
     private let freeHDBootService: FreeHDBootService
     private let artworkService: GameArtworkService
     private let artworkFetcher: GameArtworkFetcher
+    private let appsService: AppsService
+    private let smsMediaService: SMSMediaService
 
     init() {
         let helperClient = HDLDumpHelperClient()
@@ -40,13 +57,19 @@ struct ContentView: View {
         let freeHDBootService = FreeHDBootService(helper: helperClient, ps1Service: ps1Service)
         let artworkService = GameArtworkService(ps1Service: ps1Service)
         let artworkFetcher = GameArtworkFetcher()
+        let appsService = AppsService(ps1Service: ps1Service)
+        let smsMediaService = SMSMediaService(ps1Service: ps1Service)
         self.service = service
         self.ps1Service = ps1Service
         self.freeHDBootService = freeHDBootService
         self.artworkService = artworkService
         self.artworkFetcher = artworkFetcher
+        self.appsService = appsService
+        self.smsMediaService = smsMediaService
         _gameListViewModel = StateObject(wrappedValue: GameListViewModel(service: service, artworkService: artworkService, artworkFetcher: artworkFetcher))
         _ps1GameListViewModel = StateObject(wrappedValue: PS1GameListViewModel(service: ps1Service, artworkService: artworkService, artworkFetcher: artworkFetcher))
+        _appsListViewModel = StateObject(wrappedValue: AppsListViewModel(service: appsService))
+        _videoListViewModel = StateObject(wrappedValue: VideoListViewModel(service: smsMediaService))
         _helperRegistrationViewModel = StateObject(wrappedValue: HelperRegistrationViewModel(helper: helperClient))
     }
 
@@ -64,6 +87,8 @@ struct ContentView: View {
             showingBatchAddGameSheet: $showingBatchAddGameSheet,
             showingAddPS1GameSheet: $showingAddPS1GameSheet,
             showingBatchAddPS1GameSheet: $showingBatchAddPS1GameSheet,
+            showingAddAppSheet: $showingAddAppSheet,
+            showingAddVideoSheet: $showingAddVideoSheet,
             showingPopStarterSetupSheet: $showingPopStarterSetupSheet,
             showingFreeHDBootSetupSheet: $showingFreeHDBootSetupSheet,
             infoSheetItem: $infoSheetItem,
@@ -73,19 +98,27 @@ struct ContentView: View {
             freeHDBootService: freeHDBootService,
             artworkService: artworkService,
             artworkFetcher: artworkFetcher,
+            appsService: appsService,
+            smsMediaService: smsMediaService,
             gameListViewModel: gameListViewModel,
             ps1GameListViewModel: ps1GameListViewModel,
+            appsListViewModel: appsListViewModel,
+            videoListViewModel: videoListViewModel,
             helperRegistrationViewModel: helperRegistrationViewModel,
             selectedDisk: driveListViewModel.selectedDisk
         )
         .deleteAlerts(
             gameListViewModel: gameListViewModel,
             ps1GameListViewModel: ps1GameListViewModel,
+            appsListViewModel: appsListViewModel,
+            videoListViewModel: videoListViewModel,
             selectedDisk: driveListViewModel.selectedDisk
         )
         .errorAlerts(
             gameListViewModel: gameListViewModel,
             ps1GameListViewModel: ps1GameListViewModel,
+            appsListViewModel: appsListViewModel,
+            videoListViewModel: videoListViewModel,
             driveListViewModel: driveListViewModel,
             helperRegistrationViewModel: helperRegistrationViewModel,
             infoError: $infoError,
@@ -102,8 +135,12 @@ struct ContentView: View {
         }
         .onChange(of: driveListViewModel.selectedDiskID) {
             Task {
-                await gameListViewModel.refresh(disk: driveListViewModel.selectedDisk)
-                await ps1GameListViewModel.refresh(disk: driveListViewModel.selectedDisk)
+                let disk = driveListViewModel.selectedDisk
+                async let ps2 = gameListViewModel.refresh(disk: disk)
+                async let ps1 = ps1GameListViewModel.refresh(disk: disk)
+                async let apps = appsListViewModel.refresh(disk: disk)
+                async let videos = videoListViewModel.refresh(disk: disk)
+                _ = await (ps2, ps1, apps, videos)
             }
         }
         .onChange(of: fetchPS1ArtworkGame) { oldValue, newValue in
@@ -117,6 +154,10 @@ struct ContentView: View {
         .onChange(of: selectedGameKind) {
             if selectedGameKind == .ps1 {
                 Task { await ps1GameListViewModel.refresh(disk: driveListViewModel.selectedDisk) }
+            } else if selectedGameKind == .apps {
+                Task { await appsListViewModel.refresh(disk: driveListViewModel.selectedDisk) }
+            } else if selectedGameKind == .videos {
+                Task { await videoListViewModel.refresh(disk: driveListViewModel.selectedDisk) }
             }
         }
         .onChange(of: gameListViewModel.isFetchingAllArtwork) { wasFetching, isFetching in
@@ -148,6 +189,10 @@ struct ContentView: View {
                 GameListView(viewModel: gameListViewModel, disk: driveListViewModel.selectedDisk)
             case .ps1:
                 PS1GameListView(viewModel: ps1GameListViewModel, disk: driveListViewModel.selectedDisk)
+            case .apps:
+                AppsListView(viewModel: appsListViewModel, disk: driveListViewModel.selectedDisk)
+            case .videos:
+                VideoListView(viewModel: videoListViewModel, disk: driveListViewModel.selectedDisk)
             }
         }
     }
@@ -185,6 +230,7 @@ struct ContentView: View {
         switch selectedGameKind {
         case .ps2: return "ps2:\(gameListViewModel.selectedGame?.id ?? ""):\(artworkPreviewRefreshNonce)"
         case .ps1: return "ps1:\(ps1GameListViewModel.selectedGame?.id ?? ""):\(artworkPreviewRefreshNonce)"
+        case .apps, .videos: return selectedGameKind.rawValue // No cover art -- see GameKind.hasArtwork.
         }
     }
 
@@ -203,9 +249,36 @@ struct ContentView: View {
                 guard let game = ps1GameListViewModel.selectedGame else { return }
                 let data = try await artworkService.fetchInstalledPS1CoverArt(vcdFilename: game.vcdFilename, on: disk)
                 artworkPreviewImage = NSImage(data: data)
+            case .apps, .videos:
+                return // No cover art -- see GameKind.hasArtwork.
             }
         } catch {
             artworkPreviewImage = nil
+        }
+    }
+
+    private var isDeleteButtonDisabled: Bool {
+        switch selectedGameKind {
+        case .ps2: return gameListViewModel.selectedGame == nil
+        case .ps1: return ps1GameListViewModel.selectedGame == nil
+        case .apps: return appsListViewModel.selectedApp == nil
+        case .videos: return videoListViewModel.selectedVideo == nil
+        }
+    }
+
+    private var addButtonLabel: String {
+        switch selectedGameKind {
+        case .ps2, .ps1: return "Add Game"
+        case .apps: return "Add App"
+        case .videos: return "Add Video"
+        }
+    }
+
+    private var deleteButtonLabel: String {
+        switch selectedGameKind {
+        case .ps2, .ps1: return "Delete Game"
+        case .apps: return "Delete App"
+        case .videos: return "Delete Video"
         }
     }
 
@@ -215,8 +288,12 @@ struct ContentView: View {
             Button {
                 Task {
                     await driveListViewModel.refresh()
-                    await gameListViewModel.refresh(disk: driveListViewModel.selectedDisk)
-                    await ps1GameListViewModel.refresh(disk: driveListViewModel.selectedDisk)
+                    let disk = driveListViewModel.selectedDisk
+                    async let ps2 = gameListViewModel.refresh(disk: disk)
+                    async let ps1 = ps1GameListViewModel.refresh(disk: disk)
+                    async let apps = appsListViewModel.refresh(disk: disk)
+                    async let videos = videoListViewModel.refresh(disk: disk)
+                    _ = await (ps2, ps1, apps, videos)
                 }
             } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -261,10 +338,12 @@ struct ContentView: View {
                     switch selectedGameKind {
                     case .ps2: showingAddGameSheet = true
                     case .ps1: showingAddPS1GameSheet = true
+                    case .apps: showingAddAppSheet = true
+                    case .videos: showingAddVideoSheet = true
                     }
                 }
             } label: {
-                Label("Add Game", systemImage: "plus")
+                Label(addButtonLabel, systemImage: "plus")
             }
             .disabled(driveListViewModel.selectedDisk == nil)
 
@@ -309,11 +388,21 @@ struct ContentView: View {
                     DispatchQueue.main.async {
                         ps1GameListViewModel.pendingDeleteGame = game
                     }
+                case .apps:
+                    let app = appsListViewModel.selectedApp
+                    DispatchQueue.main.async {
+                        appsListViewModel.pendingDeleteApp = app
+                    }
+                case .videos:
+                    let video = videoListViewModel.selectedVideo
+                    DispatchQueue.main.async {
+                        videoListViewModel.pendingDeleteVideo = video
+                    }
                 }
             } label: {
-                Label("Delete Game", systemImage: "trash")
+                Label(deleteButtonLabel, systemImage: "trash")
             }
-            .disabled(selectedGameKind == .ps2 ? gameListViewModel.selectedGame == nil : ps1GameListViewModel.selectedGame == nil)
+            .disabled(isDeleteButtonDisabled)
 
             if selectedGameKind == .ps2 {
                 Button {
@@ -388,6 +477,8 @@ private extension View {
         showingBatchAddGameSheet: Binding<Bool>,
         showingAddPS1GameSheet: Binding<Bool>,
         showingBatchAddPS1GameSheet: Binding<Bool>,
+        showingAddAppSheet: Binding<Bool>,
+        showingAddVideoSheet: Binding<Bool>,
         showingPopStarterSetupSheet: Binding<Bool>,
         showingFreeHDBootSetupSheet: Binding<Bool>,
         infoSheetItem: Binding<InfoSheetItem?>,
@@ -397,8 +488,12 @@ private extension View {
         freeHDBootService: FreeHDBootService,
         artworkService: GameArtworkService,
         artworkFetcher: GameArtworkFetcher,
+        appsService: AppsService,
+        smsMediaService: SMSMediaService,
         gameListViewModel: GameListViewModel,
         ps1GameListViewModel: PS1GameListViewModel,
+        appsListViewModel: AppsListViewModel,
+        videoListViewModel: VideoListViewModel,
         helperRegistrationViewModel: HelperRegistrationViewModel,
         selectedDisk: Disk?
     ) -> some View {
@@ -441,6 +536,24 @@ private extension View {
                     )
                 }
             }
+            .sheet(isPresented: showingAddAppSheet) {
+                if let selectedDisk {
+                    AddAppSheet(
+                        viewModel: AddAppViewModel(service: appsService),
+                        disk: selectedDisk,
+                        onInstalled: { await appsListViewModel.refresh(disk: selectedDisk) }
+                    )
+                }
+            }
+            .sheet(isPresented: showingAddVideoSheet) {
+                if let selectedDisk {
+                    AddVideoSheet(
+                        viewModel: AddVideoViewModel(service: smsMediaService),
+                        disk: selectedDisk,
+                        onInstalled: { await videoListViewModel.refresh(disk: selectedDisk) }
+                    )
+                }
+            }
             .sheet(isPresented: showingPopStarterSetupSheet) {
                 if let selectedDisk {
                     PopStarterSetupSheet(viewModel: PopStarterSetupViewModel(service: ps1Service), disk: selectedDisk)
@@ -478,6 +591,8 @@ private extension View {
     func deleteAlerts(
         gameListViewModel: GameListViewModel,
         ps1GameListViewModel: PS1GameListViewModel,
+        appsListViewModel: AppsListViewModel,
+        videoListViewModel: VideoListViewModel,
         selectedDisk: Disk?
     ) -> some View {
         self
@@ -534,12 +649,54 @@ private extension View {
             } message: { _ in
                 Text("This permanently removes the game's VCD file from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
             }
+            .alert(
+                "Delete \"\(appsListViewModel.pendingDeleteApp?.displayName ?? "")\"?",
+                isPresented: Binding(
+                    get: { appsListViewModel.pendingDeleteApp != nil },
+                    set: { isPresented in
+                        if !isPresented { appsListViewModel.pendingDeleteApp = nil }
+                    }
+                ),
+                presenting: appsListViewModel.pendingDeleteApp
+            ) { app in
+                Button("Delete", role: .destructive) {
+                    guard let selectedDisk else { return }
+                    Task { await appsListViewModel.confirmDelete(app: app, disk: selectedDisk) }
+                }
+                Button("Cancel", role: .cancel) {
+                    appsListViewModel.pendingDeleteApp = nil
+                }
+            } message: { _ in
+                Text("This permanently removes the app's whole folder from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
+            }
+            .alert(
+                "Delete \"\(videoListViewModel.pendingDeleteVideo?.displayName ?? "")\"?",
+                isPresented: Binding(
+                    get: { videoListViewModel.pendingDeleteVideo != nil },
+                    set: { isPresented in
+                        if !isPresented { videoListViewModel.pendingDeleteVideo = nil }
+                    }
+                ),
+                presenting: videoListViewModel.pendingDeleteVideo
+            ) { video in
+                Button("Delete", role: .destructive) {
+                    guard let selectedDisk else { return }
+                    Task { await videoListViewModel.confirmDelete(video: video, disk: selectedDisk) }
+                }
+                Button("Cancel", role: .cancel) {
+                    videoListViewModel.pendingDeleteVideo = nil
+                }
+            } message: { _ in
+                Text("This permanently removes the video file from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
+            }
     }
 
     @ViewBuilder
     func errorAlerts(
         gameListViewModel: GameListViewModel,
         ps1GameListViewModel: PS1GameListViewModel,
+        appsListViewModel: AppsListViewModel,
+        videoListViewModel: VideoListViewModel,
         driveListViewModel: DriveListViewModel,
         helperRegistrationViewModel: HelperRegistrationViewModel,
         infoError: Binding<IdentifiableError?>,
@@ -547,6 +704,7 @@ private extension View {
     ) -> some View {
         self
             .gameErrorAlerts(gameListViewModel: gameListViewModel, ps1GameListViewModel: ps1GameListViewModel)
+            .appsAndVideosErrorAlerts(appsListViewModel: appsListViewModel, videoListViewModel: videoListViewModel)
             .miscErrorAlerts(
                 driveListViewModel: driveListViewModel,
                 helperRegistrationViewModel: helperRegistrationViewModel,
@@ -593,6 +751,48 @@ private extension View {
                 set: { ps1GameListViewModel.lastError = $0 }
             )) { error in
                 Alert(title: Text("pfsshell Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
+            }
+    }
+
+    // Split from gameErrorAlerts (rather than added to it) -- a single
+    // modifier-chain method covering all four content kinds' sheet+alert
+    // pairs previously hit "the compiler is unable to type-check this
+    // expression in reasonable time" once a 4th pair (Videos) was added.
+    // Each additional GameKind's error-alert pair should get its own small
+    // chained method like this one, not grow an existing one further.
+    @ViewBuilder
+    private func appsAndVideosErrorAlerts(
+        appsListViewModel: AppsListViewModel,
+        videoListViewModel: VideoListViewModel
+    ) -> some View {
+        self
+            .sheet(isPresented: Binding(
+                get: { appsListViewModel.lastError?.isLikelyMissingFullDiskAccess ?? false },
+                set: { isPresented in
+                    if !isPresented { appsListViewModel.lastError = nil }
+                }
+            )) {
+                FullDiskAccessSheet(onDismiss: { appsListViewModel.lastError = nil })
+            }
+            .alert(item: Binding(
+                get: { appsListViewModel.lastError?.isLikelyMissingFullDiskAccess == true ? nil : appsListViewModel.lastError },
+                set: { appsListViewModel.lastError = $0 }
+            )) { error in
+                Alert(title: Text("Apps Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
+            }
+            .sheet(isPresented: Binding(
+                get: { videoListViewModel.lastError?.isLikelyMissingFullDiskAccess ?? false },
+                set: { isPresented in
+                    if !isPresented { videoListViewModel.lastError = nil }
+                }
+            )) {
+                FullDiskAccessSheet(onDismiss: { videoListViewModel.lastError = nil })
+            }
+            .alert(item: Binding(
+                get: { videoListViewModel.lastError?.isLikelyMissingFullDiskAccess == true ? nil : videoListViewModel.lastError },
+                set: { videoListViewModel.lastError = $0 }
+            )) { error in
+                Alert(title: Text("Videos Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
             }
     }
 

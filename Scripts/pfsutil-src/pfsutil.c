@@ -115,7 +115,16 @@ static void mkdir_recursive(char *dir_path)
 
 static int cmd_put(const char *partition_name, const char *pfs_dest_dir, const char *pfs_dest_filename, const char *local_source_path)
 {
-    int in_file = open(local_source_path, O_RDONLY);
+    /* O_NOFOLLOW: this runs as the privileged helper, and local_source_path
+     * ultimately traces back to app-archive contents the app extracted from
+     * a user-downloaded .zip/.rar (see AppsService.installApp's own
+     * symlink rejection during enumeration). Refusing to follow a symlink
+     * here too, at the one choke point every `put` call (apps, videos, PS1
+     * game files, cover art) goes through, means a symlink slipping past
+     * any future/other caller still can't make this privileged process
+     * read an arbitrary local file (e.g. ~/.ssh/id_rsa) and copy its
+     * contents onto the PS2 drive. */
+    int in_file = open(local_source_path, O_RDONLY | O_NOFOLLOW);
     if (in_file == -1) {
         fprintf(stderr, "(!) %s: %s\n", local_source_path, strerror(errno));
         return 1;
@@ -292,6 +301,76 @@ static int cmd_rm(const char *partition_name, const char *pfs_path)
     return retval;
 }
 
+/* Recursively removes every file and subdirectory under dir_path, then
+ * dir_path itself. iomanX_rmdir (unlike iomanX_remove) requires its target to
+ * already be an empty directory, so a naive top-down rm-then-rmdir would fail
+ * with ENOTEMPTY at the first non-empty directory -- this empties bottom-up
+ * instead: for the current directory, every entry is either removed directly
+ * (files) or recursed into first (subdirectories, post-order) so their
+ * contents/directory are gone before this function rmdir's the current
+ * directory on the way back up. */
+static int rmtree_recursive(const char *dir_path)
+{
+    int dh = iomanX_dopen(dir_path);
+    if (dh < 0) {
+        fprintf(stderr, "(!) %s: %s\n", dir_path, strerror(-dh));
+        return -1;
+    }
+
+    int retval = 0;
+    iox_dirent_t dirent;
+    int result;
+    while ((result = iomanX_dread(dh, &dirent)) && result != -1) {
+        if (strcmp(dirent.name, ".") == 0 || strcmp(dirent.name, "..") == 0)
+            continue;
+
+        char child_path[768];
+        snprintf(child_path, sizeof(child_path), "%s/%s", dir_path, dirent.name);
+
+        if (FIO_S_ISDIR(dirent.stat.mode)) {
+            if (rmtree_recursive(child_path) != 0)
+                retval = -1;
+        } else {
+            int remove_result = iomanX_remove(child_path);
+            if (remove_result < 0) {
+                fprintf(stderr, "(!) %s: remove failed with %d (%s)\n", child_path, remove_result, strerror(-remove_result));
+                retval = -1;
+            }
+        }
+    }
+    iomanX_close(dh);
+
+    int rmdir_result = iomanX_rmdir(dir_path);
+    if (rmdir_result < 0) {
+        fprintf(stderr, "(!) %s: rmdir failed with %d (%s)\n", dir_path, rmdir_result, strerror(-rmdir_result));
+        retval = -1;
+    }
+    return retval;
+}
+
+/* Removes an entire directory tree. Refuses to touch the partition root,
+ * matching cmd_rm's identical existing guard. */
+static int cmd_rmtree(const char *partition_name, const char *pfs_path)
+{
+    while (pfs_path[0] == '/')
+        pfs_path++;
+    if (pfs_path[0] == '\0') {
+        fprintf(stderr, "(!) refusing to remove the partition root\n");
+        return 1;
+    }
+
+    if (mount_partition(partition_name) != 0)
+        return 1;
+
+    char dir_path[512];
+    build_pfs_path(dir_path, sizeof(dir_path), pfs_path);
+
+    int retval = rmtree_recursive(dir_path) == 0 ? 0 : 1;
+
+    unmount_partition();
+    return retval;
+}
+
 static void show_usage(const char *prog)
 {
     fprintf(stderr,
@@ -300,8 +379,9 @@ static void show_usage(const char *prog)
             "  %s get <device> <partition> <pfsPath> <localDestPath>\n"
             "  %s list <device> <partition> <path>\n"
             "  %s rm <device> <partition> <path>\n"
+            "  %s rmtree <device> <partition> <path>\n"
             "(destDir may be empty (\"\") for the partition root)\n",
-            prog, prog, prog, prog);
+            prog, prog, prog, prog, prog);
 }
 
 int main(int argc, char *argv[])
@@ -346,6 +426,14 @@ int main(int argc, char *argv[])
         if (init_device(argv[2]) != 0)
             return 1;
         result = cmd_rm(argv[3], argv[4]);
+    } else if (strcmp(command, "rmtree") == 0) {
+        if (argc != 5) {
+            show_usage(argv[0]);
+            return 1;
+        }
+        if (init_device(argv[2]) != 0)
+            return 1;
+        result = cmd_rmtree(argv[3], argv[4]);
     } else {
         show_usage(argv[0]);
         return 1;
