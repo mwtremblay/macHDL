@@ -39,6 +39,19 @@ final class AppsServiceTitleConfigTests: XCTestCase {
         XCTAssertNil(AppsService.bestBootELFCandidate(relativePaths: ["readme.txt", "theme.cfg"], appFolderName: "SomeApp"))
     }
 
+    /// Regression test: an earlier version stripped every occurrence of the
+    /// substring ".elf" (via replacingOccurrences) rather than just the
+    /// trailing extension, so a filename with ".elf" appearing more than
+    /// once corrupted the comparison. deletingPathExtension only removes
+    /// the final extension.
+    func testFilenameWithRepeatedELFSubstringDoesNotCorruptNameMatch() {
+        let candidate = AppsService.bestBootELFCandidate(
+            relativePaths: ["tools/other.elf", "game.elf.v2.elf"],
+            appFolderName: "game.elf.v2"
+        )
+        XCTAssertEqual(candidate, "game.elf.v2.elf")
+    }
+
     func testTitleConfigContentsMatchesOPLConfigWriteFormat() {
         let contents = AppsService.titleConfigContents(appFolderName: "wLaunchELF", bootRelativePath: "wLaunchELF.ELF")
         XCTAssertEqual(contents, "title=wLaunchELF\r\nboot=wLaunchELF.ELF\r\n")

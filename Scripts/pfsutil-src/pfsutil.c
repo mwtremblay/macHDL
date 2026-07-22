@@ -45,25 +45,32 @@ static int init_device(const char *device_path)
      * into every file/directory listing (PS1 games, videos) as bogus
      * entries. Redirect stdout to /dev/null for just these three init
      * calls; stderr (the real error messages below) is untouched.
+     *
+     * Single restore point below (not one copy-pasted at every early
+     * return) so a future init call added to this function can't forget
+     * to restore stdout on its own failure path. Only redirect if the
+     * backup fd itself was obtained successfully -- redirecting with no
+     * way to restore would leave stdout silently broken (and this banner
+     * bug silently reintroduced) for the rest of the process.
      */
     fflush(stdout);
     int stdout_backup = dup(STDOUT_FILENO);
-    FILE *devnull = fopen("/dev/null", "w");
-    if (devnull) {
-        dup2(fileno(devnull), STDOUT_FILENO);
-        fclose(devnull);
+    if (stdout_backup >= 0) {
+        FILE *devnull = fopen("/dev/null", "w");
+        if (devnull) {
+            dup2(fileno(devnull), STDOUT_FILENO);
+            fclose(devnull);
+        } else {
+            close(stdout_backup);
+            stdout_backup = -1;
+        }
     }
 
     /* Mirrors shell.c's do_device() exactly -- these args are already
      * proven correct throughout this project against real hardware. */
     static const char *apa_args[] = {"ps2hdd.irx", NULL};
     int result = _init_apa(1, (char **)apa_args);
-    if (result < 0) {
-        fflush(stdout);
-        if (stdout_backup >= 0) { dup2(stdout_backup, STDOUT_FILENO); close(stdout_backup); }
-        fprintf(stderr, "(!) init_apa: failed with %d (%s)\n", result, strerror(-result));
-        return -1;
-    }
+    const char *failed_step = result < 0 ? "init_apa" : NULL;
 
     /* -o (max simultaneous open files/directories) was originally 1,
      * copied from shell.c's do_device() -- fine for pfsshell's own REPL
@@ -81,20 +88,27 @@ static int init_device(const char *device_path)
      * and 32 comfortably covers realistic app directory depths (matches
      * pfsfuse's own --maxopen default/max, per Vendor/pfsshell's
      * iomanx_adapter.c). */
-    static const char *pfs_args[] = {"pfs.irx", "-m", "1", "-o", "32", "-n", "10", NULL};
-    result = _init_pfs(7, (char **)pfs_args);
-    if (result < 0) {
-        fflush(stdout);
-        if (stdout_backup >= 0) { dup2(stdout_backup, STDOUT_FILENO); close(stdout_backup); }
-        fprintf(stderr, "(!) init_pfs: failed with %d (%s)\n", result, strerror(-result));
-        return -1;
+    if (!failed_step) {
+        static const char *pfs_args[] = {"pfs.irx", "-m", "1", "-o", "32", "-n", "10", NULL};
+        result = _init_pfs(7, (char **)pfs_args);
+        if (result < 0)
+            failed_step = "init_pfs";
     }
 
-    result = _init_hdlfs(0, NULL);
+    if (!failed_step) {
+        result = _init_hdlfs(0, NULL);
+        if (result < 0)
+            failed_step = "init_hdlfs";
+    }
+
     fflush(stdout);
-    if (stdout_backup >= 0) { dup2(stdout_backup, STDOUT_FILENO); close(stdout_backup); }
-    if (result < 0) {
-        fprintf(stderr, "(!) init_hdlfs: failed with %d (%s)\n", result, strerror(-result));
+    if (stdout_backup >= 0) {
+        dup2(stdout_backup, STDOUT_FILENO);
+        close(stdout_backup);
+    }
+
+    if (failed_step) {
+        fprintf(stderr, "(!) %s: failed with %d (%s)\n", failed_step, result, strerror(-result));
         return -1;
     }
     return 0;

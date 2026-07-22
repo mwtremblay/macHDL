@@ -199,8 +199,12 @@ final class AppsService {
         // default; otherwise the alphabetically-first for a deterministic
         // result.
         return elfCandidates.first { path in
-            (path as NSString).lastPathComponent
-                .replacingOccurrences(of: ".elf", with: "", options: [.caseInsensitive])
+            // deletingPathExtension strips only the trailing extension --
+            // unlike a substring replace, a filename like "game.elf.v2.elf"
+            // only loses its final ".elf", not every occurrence of the text
+            // "elf" anywhere in the name.
+            ((path as NSString).lastPathComponent as NSString)
+                .deletingPathExtension
                 .caseInsensitiveCompare(appFolderName) == .orderedSame
         } ?? elfCandidates.min {
             let leftDepth = $0.components(separatedBy: "/").count
