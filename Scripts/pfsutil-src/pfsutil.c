@@ -34,11 +34,33 @@ static int init_device(const char *device_path)
 {
     set_atad_device_path(device_path);
 
+    /* _init_apa/_init_pfs/_init_hdlfs are ps2sdk IOP driver code (apa.c/
+     * pfs.c's APA_PRINTF/PFS_PRINTF) that unconditionally printf() a
+     * version/credits banner to stdout on init, e.g. "hdd: PS2 APA Driver
+     * v2.5 (c) 2003 Vector" / "pfs Playstation Filesystem Driver v2" --
+     * harmless for put/get/rm/rmtree (which only ever check the exit code
+     * and stderr), but cmd_list's stdout below IS the API contract the
+     * daemon parses line-by-line as directory entries (see
+     * HDLDumpHelperService.rawDirectoryEntries) -- this banner was leaking
+     * into every file/directory listing (PS1 games, videos) as bogus
+     * entries. Redirect stdout to /dev/null for just these three init
+     * calls; stderr (the real error messages below) is untouched.
+     */
+    fflush(stdout);
+    int stdout_backup = dup(STDOUT_FILENO);
+    FILE *devnull = fopen("/dev/null", "w");
+    if (devnull) {
+        dup2(fileno(devnull), STDOUT_FILENO);
+        fclose(devnull);
+    }
+
     /* Mirrors shell.c's do_device() exactly -- these args are already
      * proven correct throughout this project against real hardware. */
     static const char *apa_args[] = {"ps2hdd.irx", NULL};
     int result = _init_apa(1, (char **)apa_args);
     if (result < 0) {
+        fflush(stdout);
+        if (stdout_backup >= 0) { dup2(stdout_backup, STDOUT_FILENO); close(stdout_backup); }
         fprintf(stderr, "(!) init_apa: failed with %d (%s)\n", result, strerror(-result));
         return -1;
     }
@@ -46,11 +68,15 @@ static int init_device(const char *device_path)
     static const char *pfs_args[] = {"pfs.irx", "-m", "1", "-o", "1", "-n", "10", NULL};
     result = _init_pfs(7, (char **)pfs_args);
     if (result < 0) {
+        fflush(stdout);
+        if (stdout_backup >= 0) { dup2(stdout_backup, STDOUT_FILENO); close(stdout_backup); }
         fprintf(stderr, "(!) init_pfs: failed with %d (%s)\n", result, strerror(-result));
         return -1;
     }
 
     result = _init_hdlfs(0, NULL);
+    fflush(stdout);
+    if (stdout_backup >= 0) { dup2(stdout_backup, STDOUT_FILENO); close(stdout_backup); }
     if (result < 0) {
         fprintf(stderr, "(!) init_hdlfs: failed with %d (%s)\n", result, strerror(-result));
         return -1;
