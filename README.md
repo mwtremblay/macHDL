@@ -93,9 +93,14 @@ open mac-hdl-gui.xcodeproj
 ```
 
 Build the `mac-hdl-gui` scheme in Xcode (or `xcodebuild -scheme mac-hdl-gui
-build`). The vendored `hdl-dump`, `pfsshell`/`pfsutil`, `cue2pops`, and
-`psx-vcd` binaries are built and code-signed automatically as part of the
-app build (see `Scripts/build-*.sh`).
+build`). The vendored `hdl-dump`, `pfsshell`/`pfsutil`, `cue2pops`, `psx-vcd`,
+`unar`, and `ffmpeg`/`lame` binaries are built and code-signed automatically
+as part of the app build (see `Scripts/build-*.sh`).
+
+See `DEVELOPING.md` for the local edit-check-build loop (including a couple
+of non-obvious gotchas around `xcodegen generate` and stale editor
+diagnostics), `RELEASING.md` for cutting a release, and `VENDORING.md` for
+updating a vendored dependency.
 
 
 ### Development install
