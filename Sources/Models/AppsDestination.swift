@@ -17,6 +17,16 @@ struct AppsDestination {
     /// needed to support this.
     let appsSubdirectory: String
     let ensurePartitionExists: (PS1GameService, Disk) async throws -> Void
+    /// Whether an installed app here needs an OPL-style `title.cfg`
+    /// synthesized if the archive didn't already bring its own (see
+    /// AppsService.installOPLTitleConfigIfNeeded). True only for
+    /// `.oplApps` -- OPL's own Apps-menu scanner (`src/opl.c`'s
+    /// `scanApps()`, confirmed by reading OPL's source directly, not
+    /// assumed) is hardcoded to scan `+OPL`'s own `APPS/` folder; it never
+    /// scans `PP.FHDB.APPS` at all, so Core Apps entries need no
+    /// title.cfg -- they're launched by FreeHDBoot's own fixed
+    /// `FREEHDB.CNF` paths instead.
+    let requiresOPLTitleConfig: Bool
 
     func appFolderPFSPath(appFolderName: String) -> String {
         appsSubdirectory.isEmpty ? appFolderName : "\(appsSubdirectory)/\(appFolderName)"
@@ -29,12 +39,14 @@ struct AppsDestination {
     static let oplApps = AppsDestination(
         partitionName: PFSDestinationPaths.oplPartitionName,
         appsSubdirectory: PFSDestinationPaths.oplAppsSubdirectory,
-        ensurePartitionExists: { ps1Service, disk in try await ps1Service.createOPLPartitionIfNeeded(on: disk) }
+        ensurePartitionExists: { ps1Service, disk in try await ps1Service.createOPLPartitionIfNeeded(on: disk) },
+        requiresOPLTitleConfig: true
     )
 
     static let fhdbApps = AppsDestination(
         partitionName: FreeHDBootDestinationPaths.fhdbAppsPartitionName,
         appsSubdirectory: "",
-        ensurePartitionExists: { ps1Service, disk in try await ps1Service.createFHDBAppsPartitionIfNeeded(on: disk) }
+        ensurePartitionExists: { ps1Service, disk in try await ps1Service.createFHDBAppsPartitionIfNeeded(on: disk) },
+        requiresOPLTitleConfig: false
     )
 }

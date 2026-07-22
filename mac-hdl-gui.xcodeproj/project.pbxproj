@@ -32,6 +32,7 @@
 		34C0B173B436B19D06821201 /* labels_SP.txt in Resources */ = {isa = PBXBuildFile; fileRef = 74C6689BFA3548D1BE48CDCC /* labels_SP.txt */; };
 		35F4D7C21225E39DED4CE651 /* FMCB_CFG.ELF in Resources */ = {isa = PBXBuildFile; fileRef = 108AB736FFD2203F3B56EF50 /* FMCB_CFG.ELF */; };
 		38AB6AD6329A488FEFCF08FE /* FHDB.XLF in Resources */ = {isa = PBXBuildFile; fileRef = 2C1435AD0DC4EF21A2E0870E /* FHDB.XLF */; };
+		390EE014F494EE261F1D58E6 /* AppsServiceTitleConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 946585CE7348B550BE7C1636 /* AppsServiceTitleConfigTests.swift */; };
 		39B97DB9357F7531DF6351A0 /* InstalledApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54852F423CE46756317DE9D /* InstalledApp.swift */; };
 		3B28E6755302464D7DB1EC6D /* PFSDestinationPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658D48D918DC95EB8EECCD5B /* PFSDestinationPaths.swift */; };
 		3BEED7D09AD989E47CA12DE7 /* FREEHDB.CNF in Resources */ = {isa = PBXBuildFile; fileRef = 64095D65DA1E8196FF35B743 /* FREEHDB.CNF */; };
@@ -231,6 +232,7 @@
 		933372313AB081B4F8C790F0 /* PopStarterSystemFilesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopStarterSystemFilesSection.swift; sourceTree = "<group>"; };
 		93E8A619374AB6375091B8CC /* PFSDestinationPathsSMSMediaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSDestinationPathsSMSMediaTests.swift; sourceTree = "<group>"; };
 		93E91D04524CA27B9897CCA1 /* HelperApprovalSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperApprovalSheet.swift; sourceTree = "<group>"; };
+		946585CE7348B550BE7C1636 /* AppsServiceTitleConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsServiceTitleConfigTests.swift; sourceTree = "<group>"; };
 		952CDC1B811CDF4B29F6A4F0 /* HelperProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperProcessRunner.swift; sourceTree = "<group>"; };
 		95371246BB6621688F0C802A /* SMS.ELF */ = {isa = PBXFileReference; path = SMS.ELF; sourceTree = "<group>"; };
 		957FF3EB2E20F2FFEFBED606 /* FreeHDBootSetupSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeHDBootSetupSheet.swift; sourceTree = "<group>"; };
@@ -485,6 +487,7 @@
 				816091A1E46466A6AA35FAFE /* AddVideoViewModelTests.swift */,
 				6E5464E6BAA192315D8A1E28 /* AppArchiveExtractorTests.swift */,
 				FE15E5423740703D7DE8CA8F /* AppsDestinationTests.swift */,
+				946585CE7348B550BE7C1636 /* AppsServiceTitleConfigTests.swift */,
 				EC0456E9ED588392536D7E2D /* CSVGameListParserTests.swift */,
 				2CDFFFD7A562C2985CEB8C8D /* CueSheetAnalyzerTests.swift */,
 				171C074DE56706B5AB6C598D /* FreeHDBootDestinationPathsTests.swift */,
@@ -975,6 +978,7 @@
 				DD00D5E016907AFF11870B21 /* AddVideoViewModelTests.swift in Sources */,
 				9576875A45F218D9825F9E66 /* AppArchiveExtractorTests.swift in Sources */,
 				1A3F5E9F1C71F29EEB657C5E /* AppsDestinationTests.swift in Sources */,
+				390EE014F494EE261F1D58E6 /* AppsServiceTitleConfigTests.swift in Sources */,
 				25CB3A785B81ACEE1F59CF85 /* CSVGameListParserTests.swift in Sources */,
 				B990AEFC3D11117A2BAB45FF /* CueSheetAnalyzerTests.swift in Sources */,
 				33A9D251018B1D54DFBAE39B /* FreeHDBootDestinationPathsTests.swift in Sources */,
