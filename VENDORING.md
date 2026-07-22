@@ -3,8 +3,8 @@
 macHDL wraps several vendored, open-source PS2-homebrew CLI tools rather than
 reimplementing the HDL/APA/PFS formats itself (see the README for what each
 one does and why it's vendored as a subprocess rather than linked). This
-document is about *keeping them up to date* — see `RELEASING.md`'s Phase 0
-for when this runs.
+document covers both *adding* a new one and *keeping existing ones up to
+date* — see `RELEASING.md`'s Phase 0 for when the update side of this runs.
 
 ## Inventory
 
@@ -25,6 +25,89 @@ for when this runs.
 new release, the `.ELF`/`.BIN` files under `Vendor/popstarter/` have to be
 replaced by hand and re-verified on hardware; there's no source build for it
 in this repo.
+
+## Adding a new dependency
+
+Distinct from updating an existing one (below) — this is for vendoring a
+tool that isn't in the inventory yet. Happened twice so far (`unar`/
+XADMaster for the Apps feature, `ffmpeg`/LAME for Video/SMS-media support),
+and both times surfaced the same categories of issue:
+
+1. **Confirm the exact upstream source and version against a second,
+   independent source before vendoring anything.** For both `unar` and
+   `ffmpeg`/LAME, the actual source/tag/version was cross-checked against
+   Homebrew's own formula (read directly via `gh api`, not assumed) rather
+   than trusted from memory or a README. Don't guess at "the canonical
+   version" of a tool that doesn't have one obvious release.
+2. **Verify the license explicitly — don't carry over an assumption.**
+   `unar`/XADMaster turned out to be LGPL-2.1-or-later, not BSD as first
+   assumed. Confirm the license permits how it'll be used here — every
+   vendored CLI tool in this project runs as an unprivileged subprocess via
+   `Process`, never linked into the app's own binary (the arrangement that
+   already makes GPL `hdl-dump` and LGPL `unar` fine to vendor; a tool that
+   can't be isolated that way needs a different conversation first). If
+   there's any doubt, confirm with the user before downloading/compiling
+   anything, the same way the exact ffmpeg/LAME source URLs were confirmed
+   with the user up front.
+3. **Verify checksums against the canonical upstream release page directly**
+   (not a mirror), and record the sha256 in the build script the same way
+   `FFMPEG_SHA256`/`LAME_SHA256` are recorded in `Scripts/build-ffmpeg.sh`.
+4. **Pick the vendoring mechanism matching what already exists — don't
+   introduce a third one without discussing it first.** A git submodule
+   pinned to a commit/tag is the default (6 of 7 current dependencies use
+   it) for anything with a normal git-tag-first release flow. A committed
+   source tarball under `Vendor/<name>-src/` with a recorded sha256 (like
+   `ffmpeg`/LAME) is only for tools whose canonical distribution genuinely
+   isn't git-tag-based.
+5. **Write the build script matching `Scripts/build-*.sh`'s existing
+   shape**: guard on `SRCROOT`/`DERIVED_FILE_DIR`/`CODESIGNING_FOLDER_PATH`
+   being set, build into a scratch copy (never mutate the submodule
+   checkout or tarball extraction in place), embed + codesign into
+   `Contents/Resources/<name>-bin/` at the end.
+6. **If the build shells out to a nested `xcodebuild`, or an autoconf-style
+   `configure`/`make`, sanitize its environment first**:
+   `env -i PATH="$PATH" HOME="$HOME" ...` before the nested invocation.
+   Both `unar`'s nested `xcodebuild` and `ffmpeg`'s `configure`/`make`
+   picked up and were corrupted by the *outer* Xcode build's environment
+   variables (`PRODUCT_NAME`, `WRAPPER_NAME`, `CC`, `CFLAGS`, `LDFLAGS`,
+   etc.) the first time each was vendored — expect this class of bug
+   proactively for any future nested build tool, don't wait to hit it.
+7. **Add the new "Build & Embed" Run Script phase to `project.yml`, not
+   just `project.pbxproj`.** A prior session hand-edited a build phase
+   directly into `project.pbxproj` (working around an Edit-tool
+   exact-match failure) but forgot to mirror it into `project.yml` — the
+   next `xcodegen generate` would have silently deleted it. `project.yml`
+   is the source of truth; if `project.pbxproj` is ever hand-edited for any
+   reason, diff it against `project.yml`'s Run Script phases immediately
+   after.
+8. **Confirm real behavior empirically — don't trust the tool's own docs
+   alone.** `unar`'s "always exactly one top-level output directory"
+   behavior (which `AppArchiveExtractor.swift`'s folder-detection logic
+   depends on) was confirmed by direct experimentation against the real
+   compiled binary, not assumed from documentation. Write a test that pins
+   the behavior down (like `AppArchiveExtractorTests`) rather than just
+   eyeballing one manual run.
+9. **For any natively-compiled binary, run `otool -L` on the result and
+   confirm zero non-system (not `/usr/lib`, not `/System/Library`)
+   dependencies before considering the vendoring done** — this is the
+   actual portability test. The build machine can have Homebrew libraries
+   (like `libX11`) that an auto-detecting `configure` picks up silently;
+   the binary works fine on the dev machine and then hard-crashes via
+   `dyld` on every other user's Mac. Caught exactly this way once already
+   (see ffmpeg's `--disable-xlib --disable-vaapi` fix).
+10. **Full build + `xcodebuild test`**, then hardware verification per
+    `HARDWARE_VERIFICATION.md` if the new dependency touches HDL/PFS/
+    PopStarter/FreeHDBoot behavior.
+11. **Run the standard three-pass review** (`/code-review`, `/simplify`,
+    `/security-review`) against the new build script and any integration
+    code — a new subprocess dependency is inherently new attack surface
+    (new file paths, potentially new untrusted-input handling), not just a
+    build-system change.
+12. **Add a row to the Inventory table above**, and a bullet to "What this
+    app silently depends on the shape of" below if the new dependency's
+    *behavior* (not just its presence) is something future code relies on
+    — so the next update to it follows the checklist below with full
+    context.
 
 ## What this app silently depends on the shape of
 
