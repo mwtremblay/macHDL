@@ -65,7 +65,23 @@ static int init_device(const char *device_path)
         return -1;
     }
 
-    static const char *pfs_args[] = {"pfs.irx", "-m", "1", "-o", "1", "-n", "10", NULL};
+    /* -o (max simultaneous open files/directories) was originally 1,
+     * copied from shell.c's do_device() -- fine for pfsshell's own REPL
+     * (one thing open at a time), but cmd_rmtree's recursive walk holds a
+     * parent directory's handle open for its whole duration while it opens
+     * (and removes) each child, including recursing into subdirectories --
+     * so removing any app with even one level of subfolder needs at least
+     * 2 simultaneous handles, immediately failing with "too many open
+     * files"/"no free file slots" (confirmed on real hardware: deleting an
+     * installed app with `cores/`/`info/` subfolders left it undeleted,
+     * `rmdir` failing with "Directory not empty" because its children were
+     * never actually removed). Raised to 32 -- this only governs THIS
+     * host-side CLI process's own handle table (pfsutil never runs on the
+     * real PS2 IOP), so there's no real-hardware memory constraint here,
+     * and 32 comfortably covers realistic app directory depths (matches
+     * pfsfuse's own --maxopen default/max, per Vendor/pfsshell's
+     * iomanx_adapter.c). */
+    static const char *pfs_args[] = {"pfs.irx", "-m", "1", "-o", "32", "-n", "10", NULL};
     result = _init_pfs(7, (char **)pfs_args);
     if (result < 0) {
         fflush(stdout);
