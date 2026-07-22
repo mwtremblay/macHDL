@@ -99,7 +99,8 @@ as part of the app build (see `Scripts/build-*.sh`).
 
 See `DEVELOPING.md` for the local edit-check-build loop (including a couple
 of non-obvious gotchas around `xcodegen generate` and stale editor
-diagnostics), `RELEASING.md` for cutting a release, and `VENDORING.md` for
+diagnostics), `HARDWARE_VERIFICATION.md` for confirming a change against a
+real PS2 drive, `RELEASING.md` for cutting a release, and `VENDORING.md` for
 updating a vendored dependency.
 
 

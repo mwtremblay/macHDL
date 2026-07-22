@@ -62,7 +62,8 @@ ran. Confirm with an actual build (step 3 above) rather than trusting them.
 Required for anything touching `HelperTool/`, or that needs a real PS2
 drive to confirm end-to-end (any HDL/APA/PFS/PopStarter/FreeHDBoot work) —
 unit tests and a clean build are necessary but not sufficient for this
-class of change.
+class of change. This section is just getting a build onto the device; see
+`HARDWARE_VERIFICATION.md` for what to actually check once it's there.
 
 1. Install to a stable path — the privileged helper is registered via
    `SMAppService`, which only works reliably from a fixed location:
