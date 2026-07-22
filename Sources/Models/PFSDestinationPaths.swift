@@ -90,22 +90,11 @@ enum PFSDestinationPaths {
     /// whichever partition OPL manages, same as `oplArtSubdirectory` above.
     /// Each installed app is its own subfolder here (e.g. `APPS/wLaunchELF/`),
     /// preserving whatever internal folder structure the app's own archive
-    /// had.
+    /// had. Path-building for this lives on `AppsDestination.oplApps`
+    /// (`appFolderPFSPath`/`appPFSPath`), not here -- that's also what
+    /// `AppsDestination.fhdbApps` (Core Apps) uses, sharing the same
+    /// path-building logic with a different partition/subdirectory.
     static let oplAppsSubdirectory = "APPS"
-
-    /// Builds the PFS-side destination path for one file within an installed
-    /// app, e.g. `oplAppPFSPath(appFolderName: "wLaunchELF", relativePath:
-    /// "CFG/theme.cfg")` -> `"APPS/wLaunchELF/CFG/theme.cfg"`.
-    static func oplAppPFSPath(appFolderName: String, relativePath: String) -> String {
-        "\(oplAppsSubdirectory)/\(appFolderName)/\(relativePath)"
-    }
-
-    /// The PFS-side path for an installed app's own folder, e.g.
-    /// `oplAppFolderPFSPath(appFolderName: "wLaunchELF")` -> `"APPS/wLaunchELF"`.
-    /// Used for recursive delete.
-    static func oplAppFolderPFSPath(appFolderName: String) -> String {
-        "\(oplAppsSubdirectory)/\(appFolderName)"
-    }
 
     /// PS2 cover art is keyed by Game ID (e.g. `SLES_544.39`), confirmed
     /// against the official OPL docs (ps2homebrew.org/Open-PS2-Loader-User-

@@ -193,24 +193,24 @@ final class AppsService {
         let elfCandidates = relativePaths.filter { $0.lowercased().hasSuffix(".elf") }
         guard !elfCandidates.isEmpty else { return nil }
 
-        // Prefer an ELF whose own filename matches the app's folder name
-        // (the common case for a well-packaged app); otherwise the
-        // shallowest one (fewest path components) as the least-surprising
-        // default; otherwise the alphabetically-first for a deterministic
-        // result.
-        return elfCandidates.first { path in
-            // deletingPathExtension strips only the trailing extension --
-            // unlike a substring replace, a filename like "game.elf.v2.elf"
-            // only loses its final ".elf", not every occurrence of the text
-            // "elf" anywhere in the name.
-            ((path as NSString).lastPathComponent as NSString)
+        // Sort by a single (nameMatches, depth, path) key -- an ELF whose
+        // own filename matches the app's folder name sorts first (the
+        // common case for a well-packaged app); ties break on shallowest
+        // path (fewest path components) as the least-surprising default,
+        // then alphabetically for a fully deterministic result.
+        //
+        // deletingPathExtension strips only the trailing extension --
+        // unlike a substring replace, a filename like "game.elf.v2.elf"
+        // only loses its final ".elf", not every occurrence of the text
+        // "elf" anywhere in the name.
+        func sortKey(_ path: String) -> (Int, Int, String) {
+            let nameMatches = ((path as NSString).lastPathComponent as NSString)
                 .deletingPathExtension
                 .caseInsensitiveCompare(appFolderName) == .orderedSame
-        } ?? elfCandidates.min {
-            let leftDepth = $0.components(separatedBy: "/").count
-            let rightDepth = $1.components(separatedBy: "/").count
-            return leftDepth != rightDepth ? leftDepth < rightDepth : $0 < $1
+            let depth = path.components(separatedBy: "/").count
+            return (nameMatches ? 0 : 1, depth, path)
         }
+        return elfCandidates.min { sortKey($0) < sortKey($1) }
     }
 
     /// Matches OPL's own `configWrite` format (`src/config.c`) exactly --

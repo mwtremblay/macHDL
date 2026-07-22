@@ -52,7 +52,6 @@
 		611469E790B63EBC0750337D /* HDLDumpHelperListenerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C99A53EF71A3E0F1B5DEA /* HDLDumpHelperListenerDelegate.swift */; };
 		6CDD1C8B1F869D67694745FE /* APATOCParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C3577B91DC2CA4A823735F /* APATOCParsing.swift */; };
 		6DBEDEA983BEE1754E4D65B4 /* AddPS1GameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E9E4628A4D3283B48FA9D1 /* AddPS1GameSheet.swift */; };
-		6E73D43D4366BA61747863D0 /* PFSDestinationPathsAppsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B2445A2A60EB04237990FC /* PFSDestinationPathsAppsTests.swift */; };
 		6F6B45DB3C428FCF2A339366 /* VideoFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16EF114D75D844313BABD89 /* VideoFile.swift */; };
 		730DA767F4FA8DD88BDBF867 /* HDLGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A192C03D414DD1C76BCDD58 /* HDLGame.swift */; };
 		74C85938A4FB2398EEFC8B8E /* NotoSansJP-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 48C788F686B9A5340ED73A9C /* NotoSansJP-Bold.otf */; };
@@ -237,7 +236,6 @@
 		95371246BB6621688F0C802A /* SMS.ELF */ = {isa = PBXFileReference; path = SMS.ELF; sourceTree = "<group>"; };
 		957FF3EB2E20F2FFEFBED606 /* FreeHDBootSetupSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeHDBootSetupSheet.swift; sourceTree = "<group>"; };
 		96CABE17F5DDFE707904CEFE /* PS1GameService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameService.swift; sourceTree = "<group>"; };
-		97B2445A2A60EB04237990FC /* PFSDestinationPathsAppsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSDestinationPathsAppsTests.swift; sourceTree = "<group>"; };
 		98AC78DD11D74B156984D676 /* AddVideoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddVideoViewModel.swift; sourceTree = "<group>"; };
 		991A174CDC6EE41359EF63D9 /* AppsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsService.swift; sourceTree = "<group>"; };
 		9FC0F784D0782BFC86B63B48 /* DiskDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskDiscoveryService.swift; sourceTree = "<group>"; };
@@ -492,7 +490,6 @@
 				2CDFFFD7A562C2985CEB8C8D /* CueSheetAnalyzerTests.swift */,
 				171C074DE56706B5AB6C598D /* FreeHDBootDestinationPathsTests.swift */,
 				6ECFC1DFC466A04ADAD00B83 /* HDLDumpProgressParserTests.swift */,
-				97B2445A2A60EB04237990FC /* PFSDestinationPathsAppsTests.swift */,
 				93E8A619374AB6375091B8CC /* PFSDestinationPathsSMSMediaTests.swift */,
 				232941A22BA34E7590AFEBB0 /* PFSPartitionSizingTests.swift */,
 				66F482E2119747B57D0A2630 /* PopStarterSystemFileTests.swift */,
@@ -983,7 +980,6 @@
 				B990AEFC3D11117A2BAB45FF /* CueSheetAnalyzerTests.swift in Sources */,
 				33A9D251018B1D54DFBAE39B /* FreeHDBootDestinationPathsTests.swift in Sources */,
 				9932C575E08D0FAF22C03F0B /* HDLDumpProgressParserTests.swift in Sources */,
-				6E73D43D4366BA61747863D0 /* PFSDestinationPathsAppsTests.swift in Sources */,
 				58C887E107B628694F815A51 /* PFSDestinationPathsSMSMediaTests.swift in Sources */,
 				DC97D964B04BBFD456B09511 /* PFSPartitionSizingTests.swift in Sources */,
 				A17094758F23A098E6AA1E00 /* PS1GameServiceTests.swift in Sources */,
