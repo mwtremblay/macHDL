@@ -33,20 +33,19 @@ final class HelperProcessRunner {
 
             let stdoutBuffer = LineRedrawBuffer(onLine: onOutputLine)
             let stderrBuffer = LineRedrawBuffer(onLine: onOutputLine)
-            var stdoutData = Data()
-            var stderrData = Data()
-            let dataLock = NSLock()
+            let stdoutData = SynchronizedDataBuffer()
+            let stderrData = SynchronizedDataBuffer()
 
             stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stdoutData.append(chunk); dataLock.unlock()
+                stdoutData.append(chunk)
                 stdoutBuffer.append(chunk)
             }
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stderrData.append(chunk); dataLock.unlock()
+                stderrData.append(chunk)
                 stderrBuffer.append(chunk)
             }
 
@@ -66,7 +65,6 @@ final class HelperProcessRunner {
                 }
                 let remainingStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                 let remainingStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                dataLock.lock()
                 if !remainingStdout.isEmpty {
                     stdoutData.append(remainingStdout)
                     stdoutBuffer.append(remainingStdout)
@@ -75,13 +73,10 @@ final class HelperProcessRunner {
                     stderrData.append(remainingStderr)
                     stderrBuffer.append(remainingStderr)
                 }
-                let out = String(data: stdoutData, encoding: .utf8) ?? ""
-                let err = String(data: stderrData, encoding: .utf8) ?? ""
-                dataLock.unlock()
                 continuation.resume(returning: RunResult(
                     exitCode: proc.terminationStatus,
-                    stdout: out,
-                    stderr: err
+                    stdout: stdoutData.text,
+                    stderr: stderrData.text
                 ))
             }
 

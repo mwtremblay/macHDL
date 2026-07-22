@@ -160,7 +160,7 @@ actor PFSShellSession {
             let capturedContext = context
             Task {
                 try? await Task.sleep(nanoseconds: UInt64(Self.defaultTimeout * 1_000_000_000))
-                await self.timeoutIfStillWaiting(context: capturedContext)
+                self.timeoutIfStillWaiting(context: capturedContext)
             }
         }
     }

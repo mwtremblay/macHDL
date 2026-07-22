@@ -116,24 +116,21 @@ struct AppArchiveExtractor {
             process.standardOutput = stdoutPipe
             process.standardError = stderrPipe
 
-            var outputData = Data()
-            let dataLock = NSLock()
+            let outputData = SynchronizedDataBuffer()
             for pipe in [stdoutPipe, stderrPipe] {
                 pipe.fileHandleForReading.readabilityHandler = { handle in
                     let chunk = handle.availableData
                     guard !chunk.isEmpty else { return }
-                    dataLock.lock(); outputData.append(chunk); dataLock.unlock()
+                    outputData.append(chunk)
                 }
             }
 
             process.terminationHandler = { proc in
                 stdoutPipe.fileHandleForReading.readabilityHandler = nil
                 stderrPipe.fileHandleForReading.readabilityHandler = nil
-                dataLock.lock()
                 outputData.append(stdoutPipe.fileHandleForReading.readDataToEndOfFile())
                 outputData.append(stderrPipe.fileHandleForReading.readDataToEndOfFile())
-                let output = String(data: outputData, encoding: .utf8) ?? ""
-                dataLock.unlock()
+                let output = outputData.text
 
                 if proc.terminationStatus == 0 {
                     continuation.resume(returning: ())

@@ -123,8 +123,8 @@ final class AddAppViewModel: ObservableObject {
         startedAt = Date()
         elapsedSeconds = 0
         elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self, let startedAt = self.startedAt else { return }
             Task { @MainActor in
+                guard let self, let startedAt = self.startedAt else { return }
                 self.elapsedSeconds = Int(Date().timeIntervalSince(startedAt))
             }
         }

@@ -42,13 +42,12 @@ struct PS1GameConverter {
             process.standardError = Pipe() // discarded -- cue2pops never writes to stderr
 
             let lineBuffer = LineBuffer(onLine: onOutputLine)
-            var stdoutData = Data()
-            let dataLock = NSLock()
+            let stdoutData = SynchronizedDataBuffer()
 
             stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stdoutData.append(chunk); dataLock.unlock()
+                stdoutData.append(chunk)
                 lineBuffer.append(chunk)
             }
 
@@ -58,13 +57,11 @@ struct PS1GameConverter {
                 // callback, so drain synchronously before reading the buffer.
                 stdoutPipe.fileHandleForReading.readabilityHandler = nil
                 let remaining = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                dataLock.lock()
                 if !remaining.isEmpty {
                     stdoutData.append(remaining)
                     lineBuffer.append(remaining)
                 }
-                let output = String(data: stdoutData, encoding: .utf8) ?? ""
-                dataLock.unlock()
+                let output = stdoutData.text
 
                 if proc.terminationStatus == 1 {
                     continuation.resume(returning: outputVCDURL)

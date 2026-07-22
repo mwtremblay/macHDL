@@ -61,6 +61,8 @@
 		8143E4BE8EEB2FB76A2DCC0B /* PFSPartitionSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */; };
 		81660DC4F303CAD3027E275C /* PS1GameConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E888622D091761D14693EBAE /* PS1GameConverter.swift */; };
 		81DA5722083C4098B89853B0 /* MBR.XLF in Resources */ = {isa = PBXBuildFile; fileRef = AE6E54EC5C54E06E465C0219 /* MBR.XLF */; };
+		849017545C53A271E0070758 /* SynchronizedDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F143143316B86468525416 /* SynchronizedDataBuffer.swift */; };
+		84B88FFD7047A69C7DAE4C34 /* SynchronizedDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F143143316B86468525416 /* SynchronizedDataBuffer.swift */; };
 		8BDBBD3964B562170AF7BEF9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B686ADB794ED7D53C1A3293E /* Assets.xcassets */; };
 		8C0682FC7361FB01BDDAB441 /* OPL110.ELF in Resources */ = {isa = PBXBuildFile; fileRef = DB190B41F22780C0BC15339C /* OPL110.ELF */; };
 		8C1100B5E183BC96A3671331 /* InstallPS1GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12D9CA7E69FC23739CA81C2E /* InstallPS1GameViewModel.swift */; };
@@ -275,6 +277,7 @@
 		DD0C99A53EF71A3E0F1B5DEA /* HDLDumpHelperListenerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDLDumpHelperListenerDelegate.swift; sourceTree = "<group>"; };
 		E1C93FDD2C149514C07585DC /* PFSShellSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PFSShellSession.swift; sourceTree = "<group>"; };
 		E3DB80BD440B8DF225921EB3 /* PopStarterSystemFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopStarterSystemFile.swift; sourceTree = "<group>"; };
+		E3F143143316B86468525416 /* SynchronizedDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SynchronizedDataBuffer.swift; sourceTree = "<group>"; };
 		E888622D091761D14693EBAE /* PS1GameConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PS1GameConverter.swift; sourceTree = "<group>"; };
 		EC0456E9ED588392536D7E2D /* CSVGameListParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVGameListParserTests.swift; sourceTree = "<group>"; };
 		F1374521E0A94495E7F96ED6 /* ULE_ISR.ELF */ = {isa = PBXFileReference; path = ULE_ISR.ELF; sourceTree = "<group>"; };
@@ -350,6 +353,7 @@
 				800538CDE2FB45E533D8F32A /* HDLDumpHelperProtocol.swift */,
 				53955F73367231DAD2E827FB /* PFSPartitionSizing.swift */,
 				64F8CF9AFD115D38E0D15667 /* PFSPathComponentValidation.swift */,
+				E3F143143316B86468525416 /* SynchronizedDataBuffer.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -878,6 +882,7 @@
 				8143E4BE8EEB2FB76A2DCC0B /* PFSPartitionSizing.swift in Sources */,
 				9543A6354A39BC56D19B966C /* PFSPathComponentValidation.swift in Sources */,
 				5D8AE421DBDB3605F2D686F1 /* PFSShellSession.swift in Sources */,
+				849017545C53A271E0070758 /* SynchronizedDataBuffer.swift in Sources */,
 				C9C3515DC237CAAC4D81DDF9 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -953,6 +958,7 @@
 				B8776D21F6155FDDCFFCB7A1 /* ProgressSheet.swift in Sources */,
 				B67FB88558C212EC6546E423 /* SMSMediaService.swift in Sources */,
 				03D3DDFC8156C2F4988DAD38 /* SplitDumpCombiner.swift in Sources */,
+				84B88FFD7047A69C7DAE4C34 /* SynchronizedDataBuffer.swift in Sources */,
 				D1F348167653AFE8246A6CB5 /* VideoConverter.swift in Sources */,
 				6F6B45DB3C428FCF2A339366 /* VideoFile.swift in Sources */,
 				48910914142E5E01EF8E5AF3 /* VideoListView.swift in Sources */,

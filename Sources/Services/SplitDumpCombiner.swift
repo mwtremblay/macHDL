@@ -60,20 +60,19 @@ struct SplitDumpCombiner {
 
             let stdoutBuffer = LineBuffer(onLine: onOutputLine)
             let stderrBuffer = LineBuffer(onLine: onOutputLine)
-            var stdoutData = Data()
-            var stderrData = Data()
-            let dataLock = NSLock()
+            let stdoutData = SynchronizedDataBuffer()
+            let stderrData = SynchronizedDataBuffer()
 
             stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stdoutData.append(chunk); dataLock.unlock()
+                stdoutData.append(chunk)
                 stdoutBuffer.append(chunk)
             }
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stderrData.append(chunk); dataLock.unlock()
+                stderrData.append(chunk)
                 stderrBuffer.append(chunk)
             }
 
@@ -85,7 +84,6 @@ struct SplitDumpCombiner {
                 stderrPipe.fileHandleForReading.readabilityHandler = nil
                 let remainingStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                 let remainingStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                dataLock.lock()
                 if !remainingStdout.isEmpty {
                     stdoutData.append(remainingStdout)
                     stdoutBuffer.append(remainingStdout)
@@ -94,9 +92,8 @@ struct SplitDumpCombiner {
                     stderrData.append(remainingStderr)
                     stderrBuffer.append(remainingStderr)
                 }
-                let out = String(data: stdoutData, encoding: .utf8) ?? ""
-                let err = String(data: stderrData, encoding: .utf8) ?? ""
-                dataLock.unlock()
+                let out = stdoutData.text
+                let err = stderrData.text
 
                 if proc.terminationStatus == 0 {
                     continuation.resume(returning: mergedCueURL)

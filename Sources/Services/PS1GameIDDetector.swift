@@ -54,19 +54,18 @@ struct PS1GameIDDetector {
             process.standardOutput = stdoutPipe
             process.standardError = stderrPipe
 
-            var stdoutData = Data()
-            var stderrData = Data()
-            let dataLock = NSLock()
+            let stdoutData = SynchronizedDataBuffer()
+            let stderrData = SynchronizedDataBuffer()
 
             stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stdoutData.append(chunk); dataLock.unlock()
+                stdoutData.append(chunk)
             }
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stderrData.append(chunk); dataLock.unlock()
+                stderrData.append(chunk)
             }
 
             process.terminationHandler = { proc in
@@ -77,12 +76,10 @@ struct PS1GameIDDetector {
                 stderrPipe.fileHandleForReading.readabilityHandler = nil
                 let remainingStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                 let remainingStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                dataLock.lock()
                 if !remainingStdout.isEmpty { stdoutData.append(remainingStdout) }
                 if !remainingStderr.isEmpty { stderrData.append(remainingStderr) }
-                let out = String(data: stdoutData, encoding: .utf8) ?? ""
-                let err = String(data: stderrData, encoding: .utf8) ?? ""
-                dataLock.unlock()
+                let out = stdoutData.text
+                let err = stderrData.text
 
                 guard proc.terminationStatus == 0 else {
                     let combined = [err, out].filter { !$0.isEmpty }.joined(separator: "\n")

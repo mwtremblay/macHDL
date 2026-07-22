@@ -157,12 +157,11 @@ struct VideoConverter {
             process.standardOutput = Pipe()
             process.standardError = stderrPipe
 
-            var stderrData = Data()
-            let dataLock = NSLock()
+            let stderrData = SynchronizedDataBuffer()
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stderrData.append(chunk); dataLock.unlock()
+                stderrData.append(chunk)
             }
 
             process.terminationHandler = { _ in
@@ -170,10 +169,8 @@ struct VideoConverter {
                 // guaranteed to fire last" reasoning as convert() below.
                 stderrPipe.fileHandleForReading.readabilityHandler = nil
                 let remaining = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                dataLock.lock()
                 if !remaining.isEmpty { stderrData.append(remaining) }
-                let output = String(data: stderrData, encoding: .utf8) ?? ""
-                dataLock.unlock()
+                let output = stderrData.text
                 // A nonzero exit here is expected (no output file was given
                 // to this probe-only invocation) -- the stream list is
                 // already fully printed to stderr by the time ffmpeg gets to
@@ -244,13 +241,12 @@ struct VideoConverter {
             process.standardError = stderrPipe
 
             let lineBuffer = LineRedrawBuffer(onLine: onOutputLine)
-            var stderrData = Data()
-            let dataLock = NSLock()
+            let stderrData = SynchronizedDataBuffer()
 
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else { return }
-                dataLock.lock(); stderrData.append(chunk); dataLock.unlock()
+                stderrData.append(chunk)
                 lineBuffer.append(chunk)
             }
 
@@ -260,13 +256,11 @@ struct VideoConverter {
                 // callback, so drain synchronously before reading the buffer.
                 stderrPipe.fileHandleForReading.readabilityHandler = nil
                 let remaining = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                dataLock.lock()
                 if !remaining.isEmpty {
                     stderrData.append(remaining)
                     lineBuffer.append(remaining)
                 }
-                let output = String(data: stderrData, encoding: .utf8) ?? ""
-                dataLock.unlock()
+                let output = stderrData.text
 
                 if proc.terminationStatus == 0 {
                     continuation.resume(returning: outputURL)
