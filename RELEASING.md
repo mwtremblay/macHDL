@@ -1,7 +1,19 @@
 # Releasing macHDL
 
-The standing process for cutting a release. Four phases, in order; don't skip
-a phase or reorder them.
+The standing process for cutting a release. Phase 0 + four phases, in order;
+don't skip a phase or reorder them.
+
+## Phase 0 — Check for vendored dependency updates
+
+Check whether any of the vendored dependencies listed in `VENDORING.md` have
+a newer upstream version worth pulling in. This is a judgment call, not an
+unconditional requirement — an upstream security fix or a bug this app has
+hit is worth pulling in now; unrelated upstream churn can wait for a release
+where it's actually needed. If updating anything, follow `VENDORING.md`'s
+per-dependency checklist (one dependency per commit, patches re-verified not
+just re-applied, hardware verification where that dependency touches the
+PS2's partition table/boot chain) before moving on — any dependency bump
+becomes part of the diff Phase 1 reviews next.
 
 ## Phase 1 — Code quality review
 
