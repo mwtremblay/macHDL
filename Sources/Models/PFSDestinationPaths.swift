@@ -43,6 +43,13 @@ enum PFSDestinationPaths {
     /// This is a partition in its own right, not a subdirectory of `__.POPS`.
     static let commonPartitionName = "__common"
 
+    /// POPS.ELF/IOPRP252.IMG/POPSTARTER.ELF/POPSLOADER.ELF/PATCH_5.BIN/
+    /// POPS.PAK/POPS_IOX.PAK are all small system files -- this only needs
+    /// to comfortably fit those seven plus headroom. Single source of truth
+    /// shared by PopStarterSetupViewModel and PopStarterSystemFilesService,
+    /// which both need to create `__common` if it doesn't exist yet.
+    static let commonPartitionSizeBytes: Int64 = 64_000_000
+
     static let popsSubdirectory = "POPS"
 
     static let popsElfFilename = "POPS.ELF"

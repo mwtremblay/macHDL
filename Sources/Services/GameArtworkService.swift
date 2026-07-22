@@ -38,7 +38,7 @@ final class GameArtworkService {
     /// Writes `imageData` to `__common/POPS/ART/<vcdBaseName>.png`.
     func installPS1CoverArt(vcdFilename: String, imageData: Data, on disk: Disk) async throws {
         try await ps1Service.guardNotBootDisk(disk)
-        try await ps1Service.createCommonPartitionIfNeeded(sizeBytes: PopStarterSetupViewModel.commonPartitionSizeBytes, on: disk)
+        try await ps1Service.createCommonPartitionIfNeeded(sizeBytes: PFSDestinationPaths.commonPartitionSizeBytes, on: disk)
         let filename = PFSDestinationPaths.popsCoverArtFilename(forVCDFilename: vcdFilename)
         let localURL = try writeToScratchFile(imageData, named: filename)
         defer { try? FileManager.default.removeItem(at: localURL.deletingLastPathComponent()) }
@@ -77,7 +77,7 @@ final class GameArtworkService {
     /// failure here shouldn't block whatever succeeded already).
     func storeGameID(_ gameID: String, forVCDFilename vcdFilename: String, on disk: Disk) async throws {
         try await ps1Service.guardNotBootDisk(disk)
-        try await ps1Service.createCommonPartitionIfNeeded(sizeBytes: PopStarterSetupViewModel.commonPartitionSizeBytes, on: disk)
+        try await ps1Service.createCommonPartitionIfNeeded(sizeBytes: PFSDestinationPaths.commonPartitionSizeBytes, on: disk)
         guard let data = gameID.data(using: .utf8) else { return }
         let filename = PFSDestinationPaths.popsGameIDSidecarFilename(forVCDFilename: vcdFilename)
         let localURL = try writeToScratchFile(data, named: filename)

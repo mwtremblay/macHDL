@@ -3,6 +3,7 @@ import SwiftUI
 struct AppsListView: View {
     @ObservedObject var viewModel: AppsListViewModel
     let disk: Disk?
+    var tabTitle: String = "Apps"
 
     var body: some View {
         Group {
@@ -16,7 +17,7 @@ struct AppsListView: View {
                 }
             }
         }
-        .navigationTitle(disk.map { "\($0.displayName) — Apps" } ?? "Apps")
+        .navigationTitle(disk.map { "\($0.displayName) — \(tabTitle)" } ?? tabTitle)
         .overlay {
             if viewModel.isDeleting {
                 ProgressView("Deleting…")

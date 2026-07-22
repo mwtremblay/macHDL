@@ -11,11 +11,6 @@ final class PopStarterSetupViewModel: ObservableObject {
     @Published var lastError: IdentifiableError?
     @Published private(set) var didSucceed = false
 
-    /// POPS.ELF/IOPRP252.IMG/POPSTARTER.ELF/POPSLOADER.ELF/PATCH_5.BIN/
-    /// POPS.PAK/POPS_IOX.PAK are all small system files -- this only needs
-    /// to comfortably fit those seven plus headroom.
-    static let commonPartitionSizeBytes: Int64 = 64_000_000
-
     private let service: PS1GameService
 
     init(service: PS1GameService) {
@@ -33,7 +28,7 @@ final class PopStarterSetupViewModel: ObservableObject {
         defer { isInstalling = false }
 
         do {
-            try await service.createCommonPartitionIfNeeded(sizeBytes: Self.commonPartitionSizeBytes, on: disk)
+            try await service.createCommonPartitionIfNeeded(sizeBytes: PFSDestinationPaths.commonPartitionSizeBytes, on: disk)
             try await service.installPopStarterSystemFiles(
                 popsElfURL: popsElfURL,
                 ioprpImageURL: ioprpImageURL,

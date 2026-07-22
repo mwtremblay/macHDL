@@ -6,12 +6,14 @@ struct AddAppSheet: View {
     @ObservedObject var viewModel: AddAppViewModel
     @Environment(\.dismiss) private var dismiss
     let disk: Disk
+    var sheetTitle: String = "Add App"
+    var helpText: String = "FreeMcBoot/FreeHDBoot homebrew apps (e.g. wLaunchELF, Neutrino), distributed as .zip/.7z/.rar archives. The folder name above is where the app will live under APPS on the drive, regardless of the archive's own internal folder name."
     let onInstalled: () async -> Void
 
     var body: some View {
         ZStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Add App to \(disk.displayName)")
+                Text("\(sheetTitle) to \(disk.displayName)")
                     .font(.title2)
 
                 HStack {
@@ -23,7 +25,7 @@ struct AddAppSheet: View {
 
                 TextField("App Folder Name", text: $viewModel.appFolderName)
 
-                Text("FreeMcBoot/FreeHDBoot homebrew apps (e.g. wLaunchELF, Neutrino), distributed as .zip/.7z/.rar archives. The folder name above is where the app will live under APPS on the drive, regardless of the archive's own internal folder name.")
+                Text(helpText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
