@@ -100,8 +100,10 @@ as part of the app build (see `Scripts/build-*.sh`).
 See `DEVELOPING.md` for the local edit-check-build loop (including a couple
 of non-obvious gotchas around `xcodegen generate` and stale editor
 diagnostics), `HARDWARE_VERIFICATION.md` for confirming a change against a
-real PS2 drive, `RELEASING.md` for cutting a release, and `VENDORING.md` for
-updating a vendored dependency.
+real PS2 drive, `ADDING_CONTENT_KINDS.md` for adding a new installable
+content type (following the PS2/PS1/Apps/Videos pattern), `RELEASING.md`
+for cutting a release, and `VENDORING.md` for updating a vendored
+dependency.
 
 
 ### Development install
