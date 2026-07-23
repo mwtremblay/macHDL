@@ -184,15 +184,7 @@ struct ContentView: View {
         }
         .onChange(of: driveListViewModel.selectedDiskID) {
             Task {
-                let disk = driveListViewModel.selectedDisk
-                async let ps2 = gameListViewModel.refresh(disk: disk)
-                async let ps1 = ps1GameListViewModel.refresh(disk: disk)
-                async let coreApps = coreAppsListViewModel.refresh(disk: disk)
-                async let popStarterSystemFiles = popStarterSystemFilesViewModel.refresh(disk: disk)
-                async let videos = videoListViewModel.refresh(disk: disk)
-                async let tvShows = tvShowListViewModel.refresh(disk: disk)
-                async let userFiles = userFilesViewModel.refresh(disk: disk)
-                _ = await (ps2, ps1, coreApps, popStarterSystemFiles, videos, tvShows, userFiles)
+                await refreshAllContent(disk: driveListViewModel.selectedDisk)
             }
         }
         .onChange(of: fetchPS1ArtworkGame) { oldValue, newValue in
@@ -298,6 +290,21 @@ struct ContentView: View {
         }
     }
 
+    /// Refreshes every content list concurrently for `disk` -- shared by the
+    /// disk-selection `onChange` and the toolbar's manual refresh button,
+    /// which otherwise each duplicated this identical 7-way `async let`
+    /// fan-out verbatim.
+    private func refreshAllContent(disk: Disk?) async {
+        async let ps2 = gameListViewModel.refresh(disk: disk)
+        async let ps1 = ps1GameListViewModel.refresh(disk: disk)
+        async let coreApps = coreAppsListViewModel.refresh(disk: disk)
+        async let popStarterSystemFiles = popStarterSystemFilesViewModel.refresh(disk: disk)
+        async let videos = videoListViewModel.refresh(disk: disk)
+        async let tvShows = tvShowListViewModel.refresh(disk: disk)
+        async let userFiles = userFilesViewModel.refresh(disk: disk)
+        _ = await (ps2, ps1, coreApps, popStarterSystemFiles, videos, tvShows, userFiles)
+    }
+
     private func loadArtworkPreview() async {
         artworkPreviewImage = nil
         guard let disk = driveListViewModel.selectedDisk else { return }
@@ -358,15 +365,7 @@ struct ContentView: View {
             Button {
                 Task {
                     await driveListViewModel.refresh()
-                    let disk = driveListViewModel.selectedDisk
-                    async let ps2 = gameListViewModel.refresh(disk: disk)
-                    async let ps1 = ps1GameListViewModel.refresh(disk: disk)
-                    async let coreApps = coreAppsListViewModel.refresh(disk: disk)
-                    async let popStarterSystemFiles = popStarterSystemFilesViewModel.refresh(disk: disk)
-                    async let videos = videoListViewModel.refresh(disk: disk)
-                    async let tvShows = tvShowListViewModel.refresh(disk: disk)
-                    async let userFiles = userFilesViewModel.refresh(disk: disk)
-                    _ = await (ps2, ps1, coreApps, popStarterSystemFiles, videos, tvShows, userFiles)
+                    await refreshAllContent(disk: driveListViewModel.selectedDisk)
                 }
             } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")

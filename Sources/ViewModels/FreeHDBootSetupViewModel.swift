@@ -62,8 +62,17 @@ final class FreeHDBootSetupViewModel: ObservableObject {
         self.ps1Service = ps1Service
     }
 
+    /// Sizes are prefilled positive by `checkDrive`'s suggestions, but the
+    /// fields are editable -- guard against a user clearing/zeroing one,
+    /// matching PartitionSizePromptSheet's identical `sizeGB <= 0` gate for
+    /// the same three partitions. (The daemon-side rounding in
+    /// PFSPartitionSizing.roundedSizeInMiB already floors any size to a
+    /// minimum of 128MB, so a 0 here couldn't actually corrupt anything --
+    /// this is purely to avoid the confusing UX of confirming a size that
+    /// silently becomes 128MB instead of what the field showed.)
     var canRequestWipe: Bool {
         !isInstalling && !isCheckingDrive
+            && ps1GamesSizeBytes > 0 && moviesSizeBytes > 0 && userFilesSizeBytes > 0
     }
 
     /// Reads what's actually on the drive right now -- shown in the sheet

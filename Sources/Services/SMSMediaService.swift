@@ -25,6 +25,13 @@ final class SMSMediaService {
         guard try await ps1Service.partitionExists(named: PFSDestinationPaths.smsMediaPartitionName, on: disk) else {
             return []
         }
+        // Both listings are independent XPC round-trips against the same
+        // partition -- run them concurrently rather than sequentially,
+        // matching PS1GameService.listEntriesSplitByDirectory's identical
+        // async-let precedent for the same reason.
+        async let moviesResult = filesOnly(pfsPath: PFSDestinationPaths.smsMediaMoviesSubdirectory, on: disk)
+        async let legacyRootResult = filesOnly(pfsPath: "/", on: disk)
+
         // `Movies/` may not exist yet on an older/legacy drive -- treat that
         // the same as "no movies there yet" rather than failing the whole
         // list, matching partitionExists's own "nothing installed" semantics
@@ -35,11 +42,11 @@ final class SMSMediaService {
         // legacy root listing below.
         let moviesNames: [String]
         do {
-            moviesNames = try await filesOnly(pfsPath: PFSDestinationPaths.smsMediaMoviesSubdirectory, on: disk)
+            moviesNames = try await moviesResult
         } catch let error as HDLDumpError where error.isLikelyPathNotFound {
             moviesNames = []
         }
-        let legacyRootNames = try await filesOnly(pfsPath: "/", on: disk)
+        let legacyRootNames = try await legacyRootResult
         return moviesNames.map { VideoFile(filename: $0, location: .moviesSubdirectory) }
             + legacyRootNames.map { VideoFile(filename: $0, location: .legacyRoot) }
     }
