@@ -116,17 +116,82 @@ final class UserFilesViewModel: ObservableObject {
         addFilesCancelRequested = true
     }
 
-    /// Adds one or more files at once -- always the single code path (a
-    /// single file is just a 1-element batch), matching the
+    /// One file to actually copy: `url` is the local file on disk,
+    /// `relativeName` is the destination filename passed straight through to
+    /// UserFilesService.addFile's `filename` -- which already supports nested
+    /// paths (pfsutil's own mkdir_recursive creates the intermediate PFS
+    /// folders), so a `relativeName` like "MyFolder/sub/img.png" just works.
+    struct ExpandedFile {
+        let url: URL
+        let relativeName: String
+    }
+
+    /// Expands a raw file-picker selection (files and/or folders, mixed) into
+    /// a flat list of individual files to copy. A plain file passes through
+    /// unchanged. A folder is walked recursively, with the folder's own name
+    /// kept as the first path component of each contained file's
+    /// `relativeName` -- so picking "MyFolder" containing "sub/img.png"
+    /// produces "MyFolder/sub/img.png", preserving the whole subtree once it
+    /// lands on the PS2 drive.
+    ///
+    /// Symlinks are skipped rather than followed: one inside a picked folder
+    /// could point anywhere on the user's disk, and neither this enumeration
+    /// nor pfsutil's own file read resolves/rejects them safely -- skipping
+    /// is safer than silently copying a symlink's target. (Unlike
+    /// AppsService's identical-looking enumeration, which hard-rejects the
+    /// whole install on a symlink: that's for untrusted downloaded archives,
+    /// whereas this is the user's own local folder, so skip-and-continue is
+    /// the right default rather than aborting their whole batch.) Hidden
+    /// files are also skipped, matching AppsService's enumeration options.
+    static func expand(urls: [URL], fileManager: FileManager = .default) -> [ExpandedFile] {
+        var result: [ExpandedFile] = []
+        for url in urls {
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            guard isDirectory else {
+                result.append(ExpandedFile(url: url, relativeName: url.lastPathComponent))
+                continue
+            }
+            guard let enumerator = fileManager.enumerator(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            let rootPath = url.path
+            let folderName = url.lastPathComponent
+            for case let fileURL as URL in enumerator {
+                guard let values = try? fileURL.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { continue }
+                if values.isSymbolicLink == true { continue }
+                guard values.isDirectory != true else { continue }
+                var relativePath = fileURL.path
+                if relativePath.hasPrefix(rootPath) {
+                    relativePath.removeFirst(rootPath.count)
+                }
+                while relativePath.hasPrefix("/") { relativePath.removeFirst() }
+                result.append(ExpandedFile(url: fileURL, relativeName: "\(folderName)/\(relativePath)"))
+            }
+        }
+        return result
+    }
+
+    /// Adds one or more files/folders at once -- always the single code path
+    /// (a single file is just a 1-element batch), matching the
     /// continue-on-failure/cooperative-cancel/summary shape every other
     /// multi-item operation in this app already uses (see
-    /// BatchInstallPS1GameViewModel). One partition-size decision covers the
-    /// whole batch: the check only runs once, before the first file, not
-    /// per-file -- confirmedPartitionSizeBytes being set from either an
-    /// earlier call or confirmPartitionSize's resumption is what lets every
-    /// subsequent file in the loop skip re-checking.
+    /// BatchInstallPS1GameViewModel). Folders are expanded to their
+    /// contained files first (see `expand`), so the batch/progress below
+    /// always operates on individual files. One partition-size decision
+    /// covers the whole batch: the check only runs once, before the first
+    /// file, not per-file -- confirmedPartitionSizeBytes being set from
+    /// either an earlier call or confirmPartitionSize's resumption is what
+    /// lets every subsequent file in the loop skip re-checking.
     func addFiles(urls: [URL], on disk: Disk) async {
         guard !urls.isEmpty else { return }
+        let expandedFiles = Self.expand(urls: urls)
+        guard !expandedFiles.isEmpty else {
+            lastError = IdentifiableError(underlying: HDLDumpError.operationNotAllowed(message: "The selected item(s) contain no files to add."))
+            return
+        }
+
         let sizeBytesIfCreating: Int64
         switch await PartitionSizeGate.decide(
             confirmedSizeBytes: confirmedSizeBytes(for: disk),
@@ -144,7 +209,7 @@ final class UserFilesViewModel: ObservableObject {
         isAddingFiles = true
         addFilesCancelRequested = false
         addFilesSummary = nil
-        addFilesTotalCount = urls.count
+        addFilesTotalCount = expandedFiles.count
         defer {
             isAddingFiles = false
             addFilesCurrentIndex = 0
@@ -153,12 +218,12 @@ final class UserFilesViewModel: ObservableObject {
 
         var addedCount = 0
         var failedCount = 0
-        for (index, url) in urls.enumerated() {
+        for (index, file) in expandedFiles.enumerated() {
             if addFilesCancelRequested { break }
             addFilesCurrentIndex = index + 1
-            addFilesCurrentName = url.lastPathComponent
+            addFilesCurrentName = file.relativeName
             do {
-                try await service.addFile(localURL: url, filename: url.lastPathComponent, atPath: currentPath, partitionSizeBytesIfCreating: sizeBytesIfCreating, on: disk)
+                try await service.addFile(localURL: file.url, filename: file.relativeName, atPath: currentPath, partitionSizeBytesIfCreating: sizeBytesIfCreating, on: disk)
                 addedCount += 1
             } catch {
                 // Continue with the rest of the batch rather than aborting

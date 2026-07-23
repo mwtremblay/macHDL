@@ -2,12 +2,14 @@ import SwiftUI
 import AppKit
 
 /// Simpler than every other Add sheet in this app -- User Files takes any
-/// file(s) as-is, no conversion, no destination-name field (each source
-/// file's own name is used directly). Installs into `viewModel.currentPath`.
-/// Supports adding multiple files at once (a single file is just a
-/// 1-element batch) -- see UserFilesViewModel.addFiles' doc comment for the
-/// batch progress/cancel/summary shape, matching BatchAddPS1GameSheet's
-/// established convention.
+/// file(s) or folder(s) as-is, no conversion, no destination-name field (each
+/// source file's own name is used directly). Installs into
+/// `viewModel.currentPath`. Supports adding multiple files/folders at once (a
+/// single file is just a 1-element batch) -- see UserFilesViewModel.addFiles'
+/// doc comment for the batch progress/cancel/summary shape, matching
+/// BatchAddPS1GameSheet's established convention. A picked folder is walked
+/// recursively (see UserFilesViewModel.expand), so its whole subtree --
+/// nested subfolders included -- is copied, not just its top-level files.
 struct AddUserFileSheet: View {
     @ObservedObject var viewModel: UserFilesViewModel
     @Environment(\.dismiss) private var dismiss
@@ -26,7 +28,7 @@ struct AddUserFileSheet: View {
                     Text(sourceURLsSummaryText)
                         .foregroundStyle(sourceURLs.isEmpty ? .secondary : .primary)
                     Spacer()
-                    Button("Choose Files…") { chooseFiles() }
+                    Button("Choose Files or Folders…") { chooseFiles() }
                 }
 
                 if sourceURLs.count > 1 {
@@ -36,7 +38,7 @@ struct AddUserFileSheet: View {
                     .frame(height: 120)
                 }
 
-                Text("Any file type is supported. Files are copied to the drive as-is, using their own names -- no conversion.")
+                Text("Any file type is supported. Files are copied to the drive as-is, using their own names -- no conversion. Folders are copied recursively, including all subfolders and their contents.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -111,16 +113,16 @@ struct AddUserFileSheet: View {
 
     private var sourceURLsSummaryText: String {
         switch sourceURLs.count {
-        case 0: return "No files selected"
+        case 0: return "No items selected"
         case 1: return sourceURLs[0].lastPathComponent
-        default: return "\(sourceURLs.count) files selected"
+        default: return "\(sourceURLs.count) items selected"
         }
     }
 
     private func chooseFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = true
         panel.canChooseFiles = true
         if panel.runModal() == .OK {
             sourceURLs = panel.urls
