@@ -28,8 +28,17 @@ final class SMSMediaService {
         // `Movies/` may not exist yet on an older/legacy drive -- treat that
         // the same as "no movies there yet" rather than failing the whole
         // list, matching partitionExists's own "nothing installed" semantics
-        // above.
-        let moviesNames = (try? await filesOnly(pfsPath: PFSDestinationPaths.smsMediaMoviesSubdirectory, on: disk)) ?? []
+        // above. Only swallows the specific "path doesn't exist" failure
+        // (HDLDumpError.isLikelyPathNotFound) -- a genuine I/O/permission/
+        // daemon error listing `Movies/` still propagates instead of being
+        // silently treated as "no movies," the same as it would for the
+        // legacy root listing below.
+        let moviesNames: [String]
+        do {
+            moviesNames = try await filesOnly(pfsPath: PFSDestinationPaths.smsMediaMoviesSubdirectory, on: disk)
+        } catch let error as HDLDumpError where error.isLikelyPathNotFound {
+            moviesNames = []
+        }
         let legacyRootNames = try await filesOnly(pfsPath: "/", on: disk)
         return moviesNames.map { VideoFile(filename: $0, location: .moviesSubdirectory) }
             + legacyRootNames.map { VideoFile(filename: $0, location: .legacyRoot) }

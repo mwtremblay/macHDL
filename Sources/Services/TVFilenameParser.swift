@@ -23,7 +23,7 @@ enum TVFilenameParser {
     /// tags/extension follow it -- stripped separately by
     /// stripReleaseTag/deletingPathExtension.
     private static let pattern = try! NSRegularExpression(
-        pattern: #"(?ix) ^(?<show>.*?) [\.\-_\s]+ (?: s(?<season1>\d{1,2})e(?<episode1>\d{1,3}) | (?<season2>\d{1,2})x(?<episode2>\d{2,3}) ) (?: [\.\-_\s]+ (?<title>.*) )? $"#,
+        pattern: #"(?ix) ^(?<show>.*?) [\.\-_\s]+ (?: s(?<season1>\d{1,2})e(?<episode1>\d{1,3}) | (?<season2>\d{1,2})x(?<episode2>\d{1,3}) ) (?: [\.\-_\s]+ (?<title>.*) )? $"#,
         options: [.allowCommentsAndWhitespace]
     )
 

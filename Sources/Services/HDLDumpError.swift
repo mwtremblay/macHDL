@@ -110,6 +110,29 @@ enum HDLDumpError: Error, LocalizedError {
         }
     }
 
+    /// Whether this failure means "the path being listed/opened doesn't
+    /// exist" rather than a genuine I/O/permission/daemon failure -- same
+    /// message-content detection as isLikelyOutOfSpace/
+    /// isLikelyMissingFullDiskAccess above, since pfsutil's `list`/`get`
+    /// (cmd_list/cmd_get in Scripts/pfsutil-src/pfsutil.c) both report a
+    /// failed `iomanX_dopen`/`iomanX_open` as `"(!) <path>: %s"` with
+    /// `strerror(-fd)`, and ENOENT's strerror text is "No such file or
+    /// directory" -- the same string libc uses for a missing path on any
+    /// POSIX system. Lets a caller that wants to treat "doesn't exist yet"
+    /// as empty (e.g. SMSMediaService.listVideos's optional `Movies/`
+    /// subdirectory) do so without also swallowing a real error at that
+    /// same path (permission denied, daemon failure, disk I/O error).
+    var isLikelyPathNotFound: Bool {
+        switch self {
+        case .ioError(let message):
+            return message.localizedCaseInsensitiveContains("No such file or directory")
+        case .partitionTableMayBeInconsistent(let underlying):
+            return underlying.isLikelyPathNotFound
+        default:
+            return false
+        }
+    }
+
     init(exitCode: Int32, stderr: String) {
         switch exitCode {
         case -1: self = .daemonLaunchFailed(message: stderr)

@@ -30,6 +30,14 @@ final class TVFilenameParserTests: XCTestCase {
         XCTAssertEqual(parsed.episodeTitle, "The Train Job")
     }
 
+    func testParsesLegacyNxNNFormatWithSingleDigitEpisode() {
+        let parsed = TVFilenameParser.parse(filename: "Firefly.1x2.The.Train.Job.avi")
+        XCTAssertEqual(parsed.showName, "Firefly")
+        XCTAssertEqual(parsed.seasonNumber, 1)
+        XCTAssertEqual(parsed.episodeNumber, 2)
+        XCTAssertEqual(parsed.episodeTitle, "The Train Job")
+    }
+
     func testParsesUnderscoreSeparatedShowName() {
         let parsed = TVFilenameParser.parse(filename: "Deep_Space_Nine_S02E14_Whispers.mkv")
         XCTAssertEqual(parsed.showName, "Deep Space Nine")
