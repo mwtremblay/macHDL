@@ -44,7 +44,7 @@ final class VideoListViewModel: ObservableObject {
         isDeleting = true
         defer { isDeleting = false }
         do {
-            try await service.deleteVideo(filename: video.filename, on: disk)
+            try await service.deleteVideo(video, on: disk)
             await refresh(disk: disk)
         } catch {
             lastError = IdentifiableError(underlying: error)

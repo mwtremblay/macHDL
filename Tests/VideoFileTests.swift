@@ -3,14 +3,21 @@ import XCTest
 
 final class VideoFileTests: XCTestCase {
     func testDisplayNameStripsExtension() {
-        XCTAssertEqual(VideoFile(filename: "Movie.avi").displayName, "Movie")
+        XCTAssertEqual(VideoFile(filename: "Movie.avi", location: .moviesSubdirectory).displayName, "Movie")
     }
 
     func testDisplayNameHandlesNoExtension() {
-        XCTAssertEqual(VideoFile(filename: "Movie").displayName, "Movie")
+        XCTAssertEqual(VideoFile(filename: "Movie", location: .moviesSubdirectory).displayName, "Movie")
     }
 
-    func testIdMatchesFilename() {
-        XCTAssertEqual(VideoFile(filename: "Movie.avi").id, "Movie.avi")
+    func testIdIncludesLocation() {
+        XCTAssertEqual(VideoFile(filename: "Movie.avi", location: .moviesSubdirectory).id, "movies/Movie.avi")
+        XCTAssertEqual(VideoFile(filename: "Movie.avi", location: .legacyRoot).id, "root/Movie.avi")
+    }
+
+    func testSameFilenameAtDifferentLocationsHasDistinctID() {
+        let inMovies = VideoFile(filename: "Movie.avi", location: .moviesSubdirectory)
+        let atLegacyRoot = VideoFile(filename: "Movie.avi", location: .legacyRoot)
+        XCTAssertNotEqual(inMovies.id, atLegacyRoot.id)
     }
 }

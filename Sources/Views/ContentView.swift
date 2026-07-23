@@ -5,15 +5,16 @@ enum GameKind: String, CaseIterable {
     case ps2 = "PS2 Games"
     case ps1 = "PS1 Games"
     case coreApps = "Core Apps"
-    case apps = "Apps"
-    case videos = "Videos"
+    case videos = "Movies"
+    case tvShows = "TV Shows"
+    case userFiles = "User Files"
 
-    /// Apps/Core Apps/Videos have no cover art concept -- always show the
-    /// "No Artwork" placeholder for those kinds.
+    /// Core Apps/Movies/TV Shows/User Files have no cover art concept --
+    /// always show the "No Artwork" placeholder for those kinds.
     var hasArtwork: Bool {
         switch self {
         case .ps2, .ps1: return true
-        case .coreApps, .apps, .videos: return false
+        case .coreApps, .videos, .tvShows, .userFiles: return false
         }
     }
 }
@@ -26,6 +27,8 @@ struct ContentView: View {
     @StateObject private var popStarterSystemFilesViewModel: PopStarterSystemFilesViewModel
     @StateObject private var appsListViewModel: AppsListViewModel
     @StateObject private var videoListViewModel: VideoListViewModel
+    @StateObject private var tvShowListViewModel: TVShowListViewModel
+    @StateObject private var userFilesViewModel: UserFilesViewModel
     @StateObject private var helperRegistrationViewModel: HelperRegistrationViewModel
 
     @State private var selectedGameKind: GameKind = .ps2
@@ -34,10 +37,13 @@ struct ContentView: View {
     @State private var showingAddPS1GameSheet = false
     @State private var showingBatchAddPS1GameSheet = false
     @State private var showingAddCoreAppSheet = false
-    @State private var showingAddAppSheet = false
     @State private var showingAddVideoSheet = false
+    @State private var showingAddTVEpisodeSheet = false
+    @State private var showingAddUserFileSheet = false
+    @State private var showingNewFolderSheet = false
     @State private var showingPopStarterSetupSheet = false
     @State private var showingFreeHDBootSetupSheet = false
+    @State private var showingOPLAppsManagerSheet = false
     @State private var infoSheetItem: InfoSheetItem?
     @State private var infoError: IdentifiableError?
     @State private var binaryMissingError: IdentifiableError?
@@ -55,6 +61,8 @@ struct ContentView: View {
     private let coreAppsService: AppsService
     private let popStarterSystemFilesService: PopStarterSystemFilesService
     private let smsMediaService: SMSMediaService
+    private let tvShowService: TVShowService
+    private let userFilesService: UserFilesService
 
     init() {
         let helperClient = HDLDumpHelperClient()
@@ -67,6 +75,8 @@ struct ContentView: View {
         let coreAppsService = AppsService(ps1Service: ps1Service, destination: .fhdbApps)
         let popStarterSystemFilesService = PopStarterSystemFilesService(ps1Service: ps1Service)
         let smsMediaService = SMSMediaService(ps1Service: ps1Service)
+        let tvShowService = TVShowService(ps1Service: ps1Service)
+        let userFilesService = UserFilesService(ps1Service: ps1Service)
         self.service = service
         self.ps1Service = ps1Service
         self.freeHDBootService = freeHDBootService
@@ -76,12 +86,16 @@ struct ContentView: View {
         self.coreAppsService = coreAppsService
         self.popStarterSystemFilesService = popStarterSystemFilesService
         self.smsMediaService = smsMediaService
+        self.tvShowService = tvShowService
+        self.userFilesService = userFilesService
         _gameListViewModel = StateObject(wrappedValue: GameListViewModel(service: service, artworkService: artworkService, artworkFetcher: artworkFetcher))
         _ps1GameListViewModel = StateObject(wrappedValue: PS1GameListViewModel(service: ps1Service, artworkService: artworkService, artworkFetcher: artworkFetcher))
         _coreAppsListViewModel = StateObject(wrappedValue: AppsListViewModel(service: coreAppsService))
         _popStarterSystemFilesViewModel = StateObject(wrappedValue: PopStarterSystemFilesViewModel(service: popStarterSystemFilesService))
         _appsListViewModel = StateObject(wrappedValue: AppsListViewModel(service: appsService))
         _videoListViewModel = StateObject(wrappedValue: VideoListViewModel(service: smsMediaService))
+        _tvShowListViewModel = StateObject(wrappedValue: TVShowListViewModel(service: tvShowService))
+        _userFilesViewModel = StateObject(wrappedValue: UserFilesViewModel(service: userFilesService))
         _helperRegistrationViewModel = StateObject(wrappedValue: HelperRegistrationViewModel(helper: helperClient))
     }
 
@@ -94,14 +108,28 @@ struct ContentView: View {
             artworkPreviewPane
         }
         .toolbar { toolbarContent }
+        // Not threaded through installSheets (unlike every other sheet) --
+        // it's reached from the Utilities menu, not a per-GameKind Add
+        // button, and appsListViewModel/appsService are already directly
+        // available here without growing installSheets' already-long
+        // parameter list for a sheet that isn't part of that per-tab
+        // pattern. See OPLAppsManagerSheet's own doc comment for why this
+        // exists instead of an "Apps" tab.
+        .sheet(isPresented: $showingOPLAppsManagerSheet) {
+            if let selectedDisk = driveListViewModel.selectedDisk {
+                OPLAppsManagerSheet(appsListViewModel: appsListViewModel, appsService: appsService, disk: selectedDisk)
+            }
+        }
         .installSheets(
             showingAddGameSheet: $showingAddGameSheet,
             showingBatchAddGameSheet: $showingBatchAddGameSheet,
             showingAddPS1GameSheet: $showingAddPS1GameSheet,
             showingBatchAddPS1GameSheet: $showingBatchAddPS1GameSheet,
             showingAddCoreAppSheet: $showingAddCoreAppSheet,
-            showingAddAppSheet: $showingAddAppSheet,
             showingAddVideoSheet: $showingAddVideoSheet,
+            showingAddTVEpisodeSheet: $showingAddTVEpisodeSheet,
+            showingAddUserFileSheet: $showingAddUserFileSheet,
+            showingNewFolderSheet: $showingNewFolderSheet,
             showingPopStarterSetupSheet: $showingPopStarterSetupSheet,
             showingFreeHDBootSetupSheet: $showingFreeHDBootSetupSheet,
             infoSheetItem: $infoSheetItem,
@@ -112,13 +140,14 @@ struct ContentView: View {
             artworkService: artworkService,
             artworkFetcher: artworkFetcher,
             coreAppsService: coreAppsService,
-            appsService: appsService,
             smsMediaService: smsMediaService,
+            tvShowService: tvShowService,
             gameListViewModel: gameListViewModel,
             ps1GameListViewModel: ps1GameListViewModel,
             coreAppsListViewModel: coreAppsListViewModel,
-            appsListViewModel: appsListViewModel,
             videoListViewModel: videoListViewModel,
+            tvShowListViewModel: tvShowListViewModel,
+            userFilesViewModel: userFilesViewModel,
             helperRegistrationViewModel: helperRegistrationViewModel,
             selectedDisk: driveListViewModel.selectedDisk
         )
@@ -126,8 +155,9 @@ struct ContentView: View {
             gameListViewModel: gameListViewModel,
             ps1GameListViewModel: ps1GameListViewModel,
             coreAppsListViewModel: coreAppsListViewModel,
-            appsListViewModel: appsListViewModel,
             videoListViewModel: videoListViewModel,
+            tvShowListViewModel: tvShowListViewModel,
+            userFilesViewModel: userFilesViewModel,
             selectedDisk: driveListViewModel.selectedDisk
         )
         .errorAlerts(
@@ -135,8 +165,9 @@ struct ContentView: View {
             ps1GameListViewModel: ps1GameListViewModel,
             coreAppsListViewModel: coreAppsListViewModel,
             popStarterSystemFilesViewModel: popStarterSystemFilesViewModel,
-            appsListViewModel: appsListViewModel,
             videoListViewModel: videoListViewModel,
+            tvShowListViewModel: tvShowListViewModel,
+            userFilesViewModel: userFilesViewModel,
             driveListViewModel: driveListViewModel,
             helperRegistrationViewModel: helperRegistrationViewModel,
             infoError: $infoError,
@@ -158,9 +189,10 @@ struct ContentView: View {
                 async let ps1 = ps1GameListViewModel.refresh(disk: disk)
                 async let coreApps = coreAppsListViewModel.refresh(disk: disk)
                 async let popStarterSystemFiles = popStarterSystemFilesViewModel.refresh(disk: disk)
-                async let apps = appsListViewModel.refresh(disk: disk)
                 async let videos = videoListViewModel.refresh(disk: disk)
-                _ = await (ps2, ps1, coreApps, popStarterSystemFiles, apps, videos)
+                async let tvShows = tvShowListViewModel.refresh(disk: disk)
+                async let userFiles = userFilesViewModel.refresh(disk: disk)
+                _ = await (ps2, ps1, coreApps, popStarterSystemFiles, videos, tvShows, userFiles)
             }
         }
         .onChange(of: fetchPS1ArtworkGame) { oldValue, newValue in
@@ -180,10 +212,12 @@ struct ContentView: View {
                     async let popStarterSystemFiles = popStarterSystemFilesViewModel.refresh(disk: driveListViewModel.selectedDisk)
                     _ = await (coreApps, popStarterSystemFiles)
                 }
-            } else if selectedGameKind == .apps {
-                Task { await appsListViewModel.refresh(disk: driveListViewModel.selectedDisk) }
             } else if selectedGameKind == .videos {
                 Task { await videoListViewModel.refresh(disk: driveListViewModel.selectedDisk) }
+            } else if selectedGameKind == .tvShows {
+                Task { await tvShowListViewModel.refresh(disk: driveListViewModel.selectedDisk) }
+            } else if selectedGameKind == .userFiles {
+                Task { await userFilesViewModel.refresh(disk: driveListViewModel.selectedDisk) }
             }
         }
         .onChange(of: gameListViewModel.isFetchingAllArtwork) { wasFetching, isFetching in
@@ -217,10 +251,12 @@ struct ContentView: View {
                 PS1GameListView(viewModel: ps1GameListViewModel, disk: driveListViewModel.selectedDisk)
             case .coreApps:
                 CoreAppsView(appsViewModel: coreAppsListViewModel, systemFilesViewModel: popStarterSystemFilesViewModel, disk: driveListViewModel.selectedDisk)
-            case .apps:
-                AppsListView(viewModel: appsListViewModel, disk: driveListViewModel.selectedDisk)
             case .videos:
                 VideoListView(viewModel: videoListViewModel, disk: driveListViewModel.selectedDisk)
+            case .tvShows:
+                TVShowListView(viewModel: tvShowListViewModel, disk: driveListViewModel.selectedDisk)
+            case .userFiles:
+                UserFilesView(viewModel: userFilesViewModel, disk: driveListViewModel.selectedDisk)
             }
         }
     }
@@ -258,7 +294,7 @@ struct ContentView: View {
         switch selectedGameKind {
         case .ps2: return "ps2:\(gameListViewModel.selectedGame?.id ?? ""):\(artworkPreviewRefreshNonce)"
         case .ps1: return "ps1:\(ps1GameListViewModel.selectedGame?.id ?? ""):\(artworkPreviewRefreshNonce)"
-        case .coreApps, .apps, .videos: return selectedGameKind.rawValue // No cover art -- see GameKind.hasArtwork.
+        case .coreApps, .videos, .tvShows, .userFiles: return selectedGameKind.rawValue // No cover art -- see GameKind.hasArtwork.
         }
     }
 
@@ -277,7 +313,7 @@ struct ContentView: View {
                 guard let game = ps1GameListViewModel.selectedGame else { return }
                 let data = try await artworkService.fetchInstalledPS1CoverArt(vcdFilename: game.vcdFilename, on: disk)
                 artworkPreviewImage = NSImage(data: data)
-            case .coreApps, .apps, .videos:
+            case .coreApps, .videos, .tvShows, .userFiles:
                 return // No cover art -- see GameKind.hasArtwork.
             }
         } catch {
@@ -290,8 +326,9 @@ struct ContentView: View {
         case .ps2: return gameListViewModel.selectedGame == nil
         case .ps1: return ps1GameListViewModel.selectedGame == nil
         case .coreApps: return coreAppsListViewModel.selectedApp == nil
-        case .apps: return appsListViewModel.selectedApp == nil
         case .videos: return videoListViewModel.selectedVideo == nil
+        case .tvShows: return tvShowListViewModel.selectedEpisode == nil
+        case .userFiles: return userFilesViewModel.selectedEntry == nil
         }
     }
 
@@ -299,8 +336,9 @@ struct ContentView: View {
         switch selectedGameKind {
         case .ps2, .ps1: return "Add Game"
         case .coreApps: return "Add Core App"
-        case .apps: return "Add App"
-        case .videos: return "Add Video"
+        case .videos: return "Add Movie"
+        case .tvShows: return "Add TV Episode"
+        case .userFiles: return "Add File"
         }
     }
 
@@ -308,8 +346,9 @@ struct ContentView: View {
         switch selectedGameKind {
         case .ps2, .ps1: return "Delete Game"
         case .coreApps: return "Delete Core App"
-        case .apps: return "Delete App"
-        case .videos: return "Delete Video"
+        case .videos: return "Delete Movie"
+        case .tvShows: return "Delete Episode"
+        case .userFiles: return "Delete"
         }
     }
 
@@ -324,9 +363,10 @@ struct ContentView: View {
                     async let ps1 = ps1GameListViewModel.refresh(disk: disk)
                     async let coreApps = coreAppsListViewModel.refresh(disk: disk)
                     async let popStarterSystemFiles = popStarterSystemFilesViewModel.refresh(disk: disk)
-                    async let apps = appsListViewModel.refresh(disk: disk)
                     async let videos = videoListViewModel.refresh(disk: disk)
-                    _ = await (ps2, ps1, coreApps, popStarterSystemFiles, apps, videos)
+                    async let tvShows = tvShowListViewModel.refresh(disk: disk)
+                    async let userFiles = userFilesViewModel.refresh(disk: disk)
+                    _ = await (ps2, ps1, coreApps, popStarterSystemFiles, videos, tvShows, userFiles)
                 }
             } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -359,6 +399,19 @@ struct ContentView: View {
                     Label("Set Up FreeHDBoot…", systemImage: "opticaldiscdrive")
                 }
                 .disabled(driveListViewModel.selectedDisk == nil)
+
+                // +OPL/APPS/ (homebrew ELFs for OPL's own Apps menu) has no
+                // dedicated tab -- unlike Core Apps (PP.FHDB.APPS, its own
+                // tab), it's reached here instead. See OPLAppsManagerSheet's
+                // doc comment for why.
+                Button {
+                    DispatchQueue.main.async {
+                        showingOPLAppsManagerSheet = true
+                    }
+                } label: {
+                    Label("Manage OPL Apps…", systemImage: "puzzlepiece.extension")
+                }
+                .disabled(driveListViewModel.selectedDisk == nil)
             } label: {
                 Label("Utilities", systemImage: "wrench.and.screwdriver")
             }
@@ -372,14 +425,26 @@ struct ContentView: View {
                     case .ps2: showingAddGameSheet = true
                     case .ps1: showingAddPS1GameSheet = true
                     case .coreApps: showingAddCoreAppSheet = true
-                    case .apps: showingAddAppSheet = true
                     case .videos: showingAddVideoSheet = true
+                    case .tvShows: showingAddTVEpisodeSheet = true
+                    case .userFiles: showingAddUserFileSheet = true
                     }
                 }
             } label: {
                 Label(addButtonLabel, systemImage: "plus")
             }
             .disabled(driveListViewModel.selectedDisk == nil)
+
+            if selectedGameKind == .userFiles {
+                Button {
+                    DispatchQueue.main.async {
+                        showingNewFolderSheet = true
+                    }
+                } label: {
+                    Label("New Folder", systemImage: "folder.badge.plus")
+                }
+                .disabled(driveListViewModel.selectedDisk == nil)
+            }
 
             if selectedGameKind == .ps2 {
                 Button {
@@ -427,15 +492,20 @@ struct ContentView: View {
                     DispatchQueue.main.async {
                         coreAppsListViewModel.pendingDeleteApp = app
                     }
-                case .apps:
-                    let app = appsListViewModel.selectedApp
-                    DispatchQueue.main.async {
-                        appsListViewModel.pendingDeleteApp = app
-                    }
                 case .videos:
                     let video = videoListViewModel.selectedVideo
                     DispatchQueue.main.async {
                         videoListViewModel.pendingDeleteVideo = video
+                    }
+                case .tvShows:
+                    let episode = tvShowListViewModel.selectedEpisode
+                    DispatchQueue.main.async {
+                        tvShowListViewModel.pendingDeleteEpisode = episode
+                    }
+                case .userFiles:
+                    let entry = userFilesViewModel.selectedEntry
+                    DispatchQueue.main.async {
+                        userFilesViewModel.pendingDeleteEntry = entry
                     }
                 }
             } label: {
@@ -517,8 +587,10 @@ private extension View {
         showingAddPS1GameSheet: Binding<Bool>,
         showingBatchAddPS1GameSheet: Binding<Bool>,
         showingAddCoreAppSheet: Binding<Bool>,
-        showingAddAppSheet: Binding<Bool>,
         showingAddVideoSheet: Binding<Bool>,
+        showingAddTVEpisodeSheet: Binding<Bool>,
+        showingAddUserFileSheet: Binding<Bool>,
+        showingNewFolderSheet: Binding<Bool>,
         showingPopStarterSetupSheet: Binding<Bool>,
         showingFreeHDBootSetupSheet: Binding<Bool>,
         infoSheetItem: Binding<InfoSheetItem?>,
@@ -529,13 +601,14 @@ private extension View {
         artworkService: GameArtworkService,
         artworkFetcher: GameArtworkFetcher,
         coreAppsService: AppsService,
-        appsService: AppsService,
         smsMediaService: SMSMediaService,
+        tvShowService: TVShowService,
         gameListViewModel: GameListViewModel,
         ps1GameListViewModel: PS1GameListViewModel,
         coreAppsListViewModel: AppsListViewModel,
-        appsListViewModel: AppsListViewModel,
         videoListViewModel: VideoListViewModel,
+        tvShowListViewModel: TVShowListViewModel,
+        userFilesViewModel: UserFilesViewModel,
         helperRegistrationViewModel: HelperRegistrationViewModel,
         selectedDisk: Disk?
     ) -> some View {
@@ -589,15 +662,6 @@ private extension View {
                     )
                 }
             }
-            .sheet(isPresented: showingAddAppSheet) {
-                if let selectedDisk {
-                    AddAppSheet(
-                        viewModel: AddAppViewModel(service: appsService),
-                        disk: selectedDisk,
-                        onInstalled: { await appsListViewModel.refresh(disk: selectedDisk) }
-                    )
-                }
-            }
             .sheet(isPresented: showingAddVideoSheet) {
                 if let selectedDisk {
                     AddVideoSheet(
@@ -607,6 +671,62 @@ private extension View {
                     )
                 }
             }
+            .sheet(isPresented: showingAddTVEpisodeSheet) {
+                if let selectedDisk {
+                    AddTVEpisodeSheet(
+                        viewModel: AddTVEpisodeViewModel(service: tvShowService),
+                        disk: selectedDisk,
+                        onInstalled: { await tvShowListViewModel.refresh(disk: selectedDisk) }
+                    )
+                }
+            }
+            .sheet(isPresented: showingAddUserFileSheet) {
+                if let selectedDisk {
+                    AddUserFileSheet(
+                        viewModel: userFilesViewModel,
+                        disk: selectedDisk,
+                        onInstalled: { await userFilesViewModel.refresh(disk: selectedDisk) }
+                    )
+                }
+            }
+            .sheet(isPresented: showingNewFolderSheet) {
+                if let selectedDisk {
+                    NewFolderSheet(onCreate: { name in
+                        Task {
+                            await userFilesViewModel.createFolder(name: name, on: selectedDisk)
+                        }
+                    })
+                }
+            }
+            // Only handles the NewFolderSheet trigger. NewFolderSheet
+            // dismisses itself synchronously before its async createFolder
+            // call runs, so by the time pendingPartitionSizePrompt goes
+            // non-nil here, no other sheet is active on this view and
+            // presenting from here is safe. AddUserFileSheet is the other
+            // thing that can set pendingPartitionSizePrompt, but it
+            // deliberately stays open across its async addFiles call (to
+            // keep showing batch progress/summary) -- presenting the prompt
+            // from here at the same time would mean two sibling .sheet
+            // modifiers on this same view becoming active simultaneously,
+            // which SwiftUI does not support (this used to actually happen:
+            // the prompt would fail to appear while a stale AddUserFileSheet
+            // sat on screen). So this is suppressed whenever
+            // AddUserFileSheet owns the prompt instead -- see its own nested
+            // .sheet(item:) for that path. UserFilesViewModel is a
+            // persistent @StateObject (unlike AddVideoViewModel etc., which
+            // are constructed fresh per sheet presentation and so own this
+            // presentation themselves), so observing it from here works the
+            // same way.
+            .sheet(item: Binding(
+                get: { showingAddUserFileSheet.wrappedValue ? nil : userFilesViewModel.pendingPartitionSizePrompt },
+                set: { userFilesViewModel.pendingPartitionSizePrompt = $0 }
+            )) { request in
+                if let selectedDisk {
+                    PartitionSizePromptSheet(request: request) { sizeBytes in
+                        Task { await userFilesViewModel.confirmPartitionSize(sizeBytes, on: selectedDisk) }
+                    }
+                }
+            }
             .sheet(isPresented: showingPopStarterSetupSheet) {
                 if let selectedDisk {
                     PopStarterSetupSheet(viewModel: PopStarterSetupViewModel(service: ps1Service), disk: selectedDisk)
@@ -614,7 +734,7 @@ private extension View {
             }
             .sheet(isPresented: showingFreeHDBootSetupSheet) {
                 if let selectedDisk {
-                    FreeHDBootSetupSheet(viewModel: FreeHDBootSetupViewModel(service: freeHDBootService), disk: selectedDisk)
+                    FreeHDBootSetupSheet(viewModel: FreeHDBootSetupViewModel(service: freeHDBootService, ps1Service: ps1Service), disk: selectedDisk)
                 }
             }
             .sheet(item: infoSheetItem) { item in
@@ -645,8 +765,9 @@ private extension View {
         gameListViewModel: GameListViewModel,
         ps1GameListViewModel: PS1GameListViewModel,
         coreAppsListViewModel: AppsListViewModel,
-        appsListViewModel: AppsListViewModel,
         videoListViewModel: VideoListViewModel,
+        tvShowListViewModel: TVShowListViewModel,
+        userFilesViewModel: UserFilesViewModel,
         selectedDisk: Disk?
     ) -> some View {
         self
@@ -724,26 +845,6 @@ private extension View {
                 Text("This permanently removes the app's whole folder from \(selectedDisk?.displayName ?? "the drive"). If this is \"OPL\" or \"SMS\", your FreeHDBoot menu shortcut for it will stop working until you reinstall it. This cannot be undone.")
             }
             .alert(
-                "Delete \"\(appsListViewModel.pendingDeleteApp?.displayName ?? "")\"?",
-                isPresented: Binding(
-                    get: { appsListViewModel.pendingDeleteApp != nil },
-                    set: { isPresented in
-                        if !isPresented { appsListViewModel.pendingDeleteApp = nil }
-                    }
-                ),
-                presenting: appsListViewModel.pendingDeleteApp
-            ) { app in
-                Button("Delete", role: .destructive) {
-                    guard let selectedDisk else { return }
-                    Task { await appsListViewModel.confirmDelete(app: app, disk: selectedDisk) }
-                }
-                Button("Cancel", role: .cancel) {
-                    appsListViewModel.pendingDeleteApp = nil
-                }
-            } message: { _ in
-                Text("This permanently removes the app's whole folder from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
-            }
-            .alert(
                 "Delete \"\(videoListViewModel.pendingDeleteVideo?.displayName ?? "")\"?",
                 isPresented: Binding(
                     get: { videoListViewModel.pendingDeleteVideo != nil },
@@ -763,6 +864,48 @@ private extension View {
             } message: { _ in
                 Text("This permanently removes the video file from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
             }
+            .alert(
+                "Delete \"\(tvShowListViewModel.pendingDeleteEpisode?.displayName ?? "")\"?",
+                isPresented: Binding(
+                    get: { tvShowListViewModel.pendingDeleteEpisode != nil },
+                    set: { isPresented in
+                        if !isPresented { tvShowListViewModel.pendingDeleteEpisode = nil }
+                    }
+                ),
+                presenting: tvShowListViewModel.pendingDeleteEpisode
+            ) { episode in
+                Button("Delete", role: .destructive) {
+                    guard let selectedDisk else { return }
+                    Task { await tvShowListViewModel.confirmDelete(episode: episode, disk: selectedDisk) }
+                }
+                Button("Cancel", role: .cancel) {
+                    tvShowListViewModel.pendingDeleteEpisode = nil
+                }
+            } message: { _ in
+                Text("This permanently removes the episode file from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
+            }
+            .alert(
+                "Delete \"\(userFilesViewModel.pendingDeleteEntry?.name ?? "")\"?",
+                isPresented: Binding(
+                    get: { userFilesViewModel.pendingDeleteEntry != nil },
+                    set: { isPresented in
+                        if !isPresented { userFilesViewModel.pendingDeleteEntry = nil }
+                    }
+                ),
+                presenting: userFilesViewModel.pendingDeleteEntry
+            ) { entry in
+                Button("Delete", role: .destructive) {
+                    guard let selectedDisk else { return }
+                    Task { await userFilesViewModel.confirmDelete(entry: entry, disk: selectedDisk) }
+                }
+                Button("Cancel", role: .cancel) {
+                    userFilesViewModel.pendingDeleteEntry = nil
+                }
+            } message: { entry in
+                Text(entry.isDirectory
+                    ? "This permanently removes the folder and everything in it from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone."
+                    : "This permanently removes the file from \(selectedDisk?.displayName ?? "the drive"). This cannot be undone.")
+            }
     }
 
     @ViewBuilder
@@ -771,8 +914,9 @@ private extension View {
         ps1GameListViewModel: PS1GameListViewModel,
         coreAppsListViewModel: AppsListViewModel,
         popStarterSystemFilesViewModel: PopStarterSystemFilesViewModel,
-        appsListViewModel: AppsListViewModel,
         videoListViewModel: VideoListViewModel,
+        tvShowListViewModel: TVShowListViewModel,
+        userFilesViewModel: UserFilesViewModel,
         driveListViewModel: DriveListViewModel,
         helperRegistrationViewModel: HelperRegistrationViewModel,
         infoError: Binding<IdentifiableError?>,
@@ -781,7 +925,9 @@ private extension View {
         self
             .gameErrorAlerts(gameListViewModel: gameListViewModel, ps1GameListViewModel: ps1GameListViewModel)
             .coreAppsErrorAlerts(coreAppsListViewModel: coreAppsListViewModel, popStarterSystemFilesViewModel: popStarterSystemFilesViewModel)
-            .appsAndVideosErrorAlerts(appsListViewModel: appsListViewModel, videoListViewModel: videoListViewModel)
+            .videoErrorAlerts(videoListViewModel: videoListViewModel)
+            .tvShowsErrorAlerts(tvShowListViewModel: tvShowListViewModel)
+            .userFilesErrorAlerts(userFilesViewModel: userFilesViewModel)
             .miscErrorAlerts(
                 driveListViewModel: driveListViewModel,
                 helperRegistrationViewModel: helperRegistrationViewModel,
@@ -831,10 +977,10 @@ private extension View {
             }
     }
 
-    // Its own small chained method, not folded into appsAndVideosErrorAlerts
-    // -- see that method's doc comment for why each additional GameKind's
-    // error-alert pair gets its own method rather than growing an existing
-    // one (a documented compiler-timeout risk in this file).
+    // Its own small chained method -- see videoErrorAlerts' doc comment for
+    // why each additional GameKind's error-alert pair gets its own method
+    // rather than growing an existing one (a documented compiler-timeout
+    // risk in this file).
     @ViewBuilder
     private func coreAppsErrorAlerts(
         coreAppsListViewModel: AppsListViewModel,
@@ -871,32 +1017,18 @@ private extension View {
             }
     }
 
-    // Split from gameErrorAlerts (rather than added to it) -- a single
-    // modifier-chain method covering all four content kinds' sheet+alert
-    // pairs previously hit "the compiler is unable to type-check this
-    // expression in reasonable time" once a 4th pair (Videos) was added.
+    // Split from gameErrorAlerts (rather than added to it) -- previously
+    // covered Apps + Videos together (both hit "the compiler is unable to
+    // type-check this expression in reasonable time" as a single chain), but
+    // Apps' half moved into OPLAppsManagerSheet's own self-contained alerts
+    // once the Apps tab was removed -- this method now covers Videos alone.
     // Each additional GameKind's error-alert pair should get its own small
     // chained method like this one, not grow an existing one further.
     @ViewBuilder
-    private func appsAndVideosErrorAlerts(
-        appsListViewModel: AppsListViewModel,
+    private func videoErrorAlerts(
         videoListViewModel: VideoListViewModel
     ) -> some View {
         self
-            .sheet(isPresented: Binding(
-                get: { appsListViewModel.lastError?.isLikelyMissingFullDiskAccess ?? false },
-                set: { isPresented in
-                    if !isPresented { appsListViewModel.lastError = nil }
-                }
-            )) {
-                FullDiskAccessSheet(onDismiss: { appsListViewModel.lastError = nil })
-            }
-            .alert(item: Binding(
-                get: { appsListViewModel.lastError?.isLikelyMissingFullDiskAccess == true ? nil : appsListViewModel.lastError },
-                set: { appsListViewModel.lastError = $0 }
-            )) { error in
-                Alert(title: Text("Apps Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
-            }
             .sheet(isPresented: Binding(
                 get: { videoListViewModel.lastError?.isLikelyMissingFullDiskAccess ?? false },
                 set: { isPresented in
@@ -910,6 +1042,54 @@ private extension View {
                 set: { videoListViewModel.lastError = $0 }
             )) { error in
                 Alert(title: Text("Videos Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
+            }
+    }
+
+    // Its own chained method -- see videoErrorAlerts' doc comment for why
+    // each additional GameKind's error-alert pair gets its own method rather
+    // than growing an existing one (a documented compiler-timeout risk in
+    // this file).
+    @ViewBuilder
+    private func tvShowsErrorAlerts(
+        tvShowListViewModel: TVShowListViewModel
+    ) -> some View {
+        self
+            .sheet(isPresented: Binding(
+                get: { tvShowListViewModel.lastError?.isLikelyMissingFullDiskAccess ?? false },
+                set: { isPresented in
+                    if !isPresented { tvShowListViewModel.lastError = nil }
+                }
+            )) {
+                FullDiskAccessSheet(onDismiss: { tvShowListViewModel.lastError = nil })
+            }
+            .alert(item: Binding(
+                get: { tvShowListViewModel.lastError?.isLikelyMissingFullDiskAccess == true ? nil : tvShowListViewModel.lastError },
+                set: { tvShowListViewModel.lastError = $0 }
+            )) { error in
+                Alert(title: Text("TV Shows Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
+            }
+    }
+
+    // Its own chained method, same compiler-timeout-avoidance reasoning as
+    // tvShowsErrorAlerts above.
+    @ViewBuilder
+    private func userFilesErrorAlerts(
+        userFilesViewModel: UserFilesViewModel
+    ) -> some View {
+        self
+            .sheet(isPresented: Binding(
+                get: { userFilesViewModel.lastError?.isLikelyMissingFullDiskAccess ?? false },
+                set: { isPresented in
+                    if !isPresented { userFilesViewModel.lastError = nil }
+                }
+            )) {
+                FullDiskAccessSheet(onDismiss: { userFilesViewModel.lastError = nil })
+            }
+            .alert(item: Binding(
+                get: { userFilesViewModel.lastError?.isLikelyMissingFullDiskAccess == true ? nil : userFilesViewModel.lastError },
+                set: { userFilesViewModel.lastError = $0 }
+            )) { error in
+                Alert(title: Text("User Files Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
             }
     }
 

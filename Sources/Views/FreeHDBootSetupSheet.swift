@@ -32,12 +32,20 @@ struct FreeHDBootSetupSheet: View {
 
             statusSection
 
+            // Shown before the destructive confirmation, not after --
+            // creating these is now part of the same one confirmation
+            // (see FreeHDBootSetupViewModel's doc comment for why an
+            // earlier, separate-step version of this was a real bug).
+            if !viewModel.isInstalling && !viewModel.didSucceed {
+                partitionSizingSection
+            }
+
             if viewModel.isInstalling {
                 progressSection
             }
 
             if viewModel.didSucceed {
-                Text("FreeHDBoot setup completed. Move the drive to your PS2 to confirm it boots -- this cannot be verified from the Mac.")
+                Text("FreeHDBoot setup completed, including the PS1 Games/Movies/User Files partitions. Move the drive to your PS2 to confirm it boots -- this cannot be verified from the Mac.")
                     .font(.callout)
                     .foregroundStyle(.green)
                     .fixedSize(horizontal: false, vertical: true)
@@ -95,7 +103,7 @@ struct FreeHDBootSetupSheet: View {
     }
 
     private var wipeConfirmationMessage: String {
-        var message = "This will completely erase ALL data on \(disk.displayName) (\(disk.displaySizeText)) and rebuild it from scratch as a FreeHDBoot drive. This cannot be undone."
+        var message = "This will completely erase ALL data on \(disk.displayName) (\(disk.displaySizeText)) and rebuild it from scratch as a FreeHDBoot drive, including PS1 Games/Movies/User Files partitions at the sizes shown. This cannot be undone."
         if viewModel.driveAppearsBlank == false {
             message += "\n\nThis drive is NOT blank -- it currently has: \(viewModel.existingPartitionNames.joined(separator: ", ")). All of that will be permanently destroyed."
         }
@@ -128,6 +136,53 @@ struct FreeHDBootSetupSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+    }
+
+    /// Sizes PS1 Games/Movies/TV/User Files -- created together with the
+    /// rest of FreeHDBoot setup as one action when "Set Up FreeHDBoot…" is
+    /// confirmed below, not a separate step (see FreeHDBootSetupViewModel's
+    /// doc comment for why that matters). If you'd rather decide later,
+    /// just leave these at their suggested defaults or close this sheet
+    /// without confirming -- any partition not created here still gets its
+    /// own one-time sizing prompt the first time it's actually used.
+    @ViewBuilder
+    private var partitionSizingSection: some View {
+        Divider()
+        VStack(alignment: .leading, spacing: 12) {
+            Text("These partitions will be created along with FreeHDBoot setup. PS2 PFS partitions can't be resized later without recreating them.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            sizeRow(title: "PS1 Games", sizeBytes: $viewModel.ps1GamesSizeBytes)
+            sizeRow(title: "Movies/TV", sizeBytes: $viewModel.moviesSizeBytes)
+            sizeRow(title: "User Files", sizeBytes: $viewModel.userFilesSizeBytes)
+
+            if let partitionSizeWarning = viewModel.partitionSizeWarning {
+                Text(partitionSizeWarning)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func sizeRow(title: String, sizeBytes: Binding<Int64>) -> some View {
+        HStack {
+            Text(title)
+                .frame(width: 90, alignment: .leading)
+            TextField(
+                title,
+                value: Binding(
+                    get: { GigabyteConversion.gigabytes(fromBytes: sizeBytes.wrappedValue) },
+                    set: { sizeBytes.wrappedValue = GigabyteConversion.bytes(fromGigabytes: $0) }
+                ),
+                format: .number.precision(.fractionLength(0...2))
+            )
+            .labelsHidden()
+            .frame(width: 80)
+            Text("GB")
         }
     }
 

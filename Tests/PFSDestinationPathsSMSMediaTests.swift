@@ -11,7 +11,4 @@ final class PFSDestinationPathsSMSMediaTests: XCTestCase {
         )
     }
 
-    func testSmsMediaPartitionSizeIsAligned128MBMultiple() {
-        XCTAssertEqual(PFSDestinationPaths.smsMediaPartitionSizeBytes % PFSPartitionSizing.bytesPer128MB, 0)
-    }
 }

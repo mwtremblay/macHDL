@@ -363,6 +363,41 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
         }
     }
 
+    /// Creates a directory (and any missing intermediate parents, via
+    /// pfsutil's `mkdir` command / mkdir_recursive) without writing any
+    /// file -- see HDLDumpHelperProtocol.makePFSDirectory's doc comment.
+    /// Same partition-ops allowlist/destination-path validation/boot-disk
+    /// guard as removePFSFile/removePFSTree.
+    func makePFSDirectory(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Int32, String) -> Void) {
+        Task {
+            guard Self.isValidPFSPartitionNameForPartitionOps(partitionName) else {
+                reply(115, "refused: invalid PFS partition name '\(partitionName)'")
+                return
+            }
+            guard Self.isValidPFSDestinationPath(pfsPath) else {
+                reply(115, "refused: invalid PFS path '\(pfsPath)'")
+                return
+            }
+            let targetsBootDisk = await isBootDisk(devicePath: devicePath)
+            guard !targetsBootDisk else {
+                reply(115, "refused: target is the boot disk")
+                return
+            }
+            do {
+                let result = try await runner.run(
+                    binary: try HelperToolBinaryLocator.resolvePFSUtil(),
+                    arguments: ["mkdir", devicePath, partitionName, pfsPath],
+                    workingDirectory: FileManager.default.temporaryDirectory,
+                    onOutputLine: nil,
+                    trackForCancellation: false
+                )
+                reply(result.exitCode, result.stderr)
+            } catch {
+                reply(-1, "launch failed: \(error)")
+            }
+        }
+    }
+
     func getPFSFile(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Data?, Int32, String) -> Void) {
         Task {
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -510,7 +545,7 @@ final class HDLDumpHelperService: NSObject, HDLDumpHelperProtocol {
     /// narrowly-scoped allowlist instead of one list shared across
     /// structurally different operations.
     private static func isValidPFSPartitionNameForPartitionOps(_ name: String) -> Bool {
-        if name == "__.POPS" || name == "__common" || name == "+OPL" || name == "PP.FHDB.APPS" || name == "SMS_Media" { return true }
+        if name == "__.POPS" || name == "__common" || name == "+OPL" || name == "PP.FHDB.APPS" || name == "SMS_Media" || name == "USERFILES" { return true }
         for suffix in 1...10 where name == "__.POPS\(suffix)" {
             return true
         }

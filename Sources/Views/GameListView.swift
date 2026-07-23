@@ -3,6 +3,7 @@ import SwiftUI
 struct GameListView: View {
     @ObservedObject var viewModel: GameListViewModel
     let disk: Disk?
+    @State private var sortOrder = [KeyPathComparator(\HDLGame.name)]
 
     var body: some View {
         Group {
@@ -11,13 +12,19 @@ struct GameListView: View {
             } else if viewModel.games.isEmpty && !viewModel.isLoading {
                 ContentUnavailableFallback(text: "No HDL games installed on this drive.")
             } else {
-                Table(viewModel.games, selection: $viewModel.selectedGameID) {
+                Table(viewModel.games.sorted(using: sortOrder), selection: $viewModel.selectedGameID, sortOrder: $sortOrder) {
                     TableColumn("Name", value: \.name)
-                    TableColumn("Type") { game in
+                    // Sorts by the raw isDVD-derived label text ("CD"/"DVD"),
+                    // matching what's displayed -- fine since there are only
+                    // two possible values.
+                    TableColumn("Type", value: \.mediaTypeLabel) { game in
                         Text(game.mediaTypeLabel)
                     }
                     .width(50)
-                    TableColumn("Size") { game in
+                    // Sorts by the raw sizeKB Int, not the formatted
+                    // displaySizeText string -- sorting the formatted text
+                    // would put "1.2 GB" before "900 MB" lexicographically.
+                    TableColumn("Size", value: \.sizeKB) { game in
                         Text(game.displaySizeText)
                     }
                     .width(90)

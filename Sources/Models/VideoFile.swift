@@ -1,15 +1,29 @@
 import Foundation
 
-/// A converted video file installed at the `SMS_Media` partition root -- one
-/// file, no subdirectory, no per-video metadata. Deliberately as thin as
-/// InstalledApp/PS1Game, since this feature doesn't need more than a
-/// filename to list/add/delete.
+/// A converted video file installed under the `SMS_Media` partition -- no
+/// per-video metadata beyond filename/location. Deliberately as thin as
+/// InstalledApp/PS1Game otherwise.
 struct VideoFile: Identifiable, Hashable {
-    /// The exact filename at the `SMS_Media` partition root -- also the only
-    /// identity pfsutil gives us, there's no separate internal ID.
-    let filename: String
+    /// Where this file actually lives -- `SMSMediaService.listVideos` merges
+    /// the current `Movies/` subdirectory with the legacy partition root
+    /// (see `PFSDestinationPaths.smsMediaVideoPFSPath`'s doc comment), and a
+    /// drive can genuinely have same-named files in both places. Tracking
+    /// which one each entry came from is what lets `id` stay unique and lets
+    /// `deleteVideo` target the exact file instead of guessing.
+    enum Location: Hashable {
+        case moviesSubdirectory
+        case legacyRoot
+    }
 
-    var id: String { filename }
+    let filename: String
+    let location: Location
+
+    var id: String {
+        switch location {
+        case .moviesSubdirectory: return "movies/\(filename)"
+        case .legacyRoot: return "root/\(filename)"
+        }
+    }
 
     /// filename with its extension stripped, for display -- e.g.
     /// "Movie.avi" -> "Movie".

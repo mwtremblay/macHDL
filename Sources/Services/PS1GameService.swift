@@ -104,40 +104,51 @@ final class PS1GameService {
         try await createPartition(name: PFSDestinationPaths.commonPartitionName, sizeBytes: sizeBytes, on: disk)
     }
 
-    /// OPL auto-creates a 128MB `+OPL` partition when it first runs and finds
-    /// none configured -- matching that default size here so this app's own
-    /// creation (if OPL hasn't run yet) looks identical to what OPL itself
-    /// would have made. Hoisted here (from GameArtworkService, where it
-    /// originated for cover art) so the Apps feature's AppsService can create
-    /// this same partition without an artwork-service dependency that has
-    /// nothing to do with artwork.
-    static let oplPartitionSizeBytes: Int64 = 128_000_000
-
     /// Shared "check-then-create" body for createOPLPartitionIfNeeded/
-    /// createSMSMediaPartitionIfNeeded/createFHDBAppsPartitionIfNeeded below
-    /// -- each just fixes the name/size arguments.
+    /// createSMSMediaPartitionIfNeeded/createFHDBAppsPartitionIfNeeded/
+    /// createUserFilesPartitionIfNeeded below -- each just fixes the
+    /// name/size arguments.
     private func createPartitionIfNeeded(name: String, sizeBytes: Int64, on disk: Disk) async throws {
         guard try await !partitionExists(named: name, on: disk) else { return }
         try await createPartition(name: name, sizeBytes: sizeBytes, on: disk)
     }
 
+    /// `+OPL` never scales with drive size (see PartitionSizeSuggestions'
+    /// doc comment -- homebrew ELFs/OPL's own config/art don't get bigger on
+    /// a bigger drive), so unlike the scaling partitions below, there's no
+    /// real sizing decision to prompt the user for here -- always silently
+    /// created at PartitionSizeSuggestions.oplPartitionSizeBytes, matching
+    /// what OPL itself auto-creates when it first runs and finds none
+    /// configured.
     func createOPLPartitionIfNeeded(on disk: Disk) async throws {
-        try await createPartitionIfNeeded(name: PFSDestinationPaths.oplPartitionName, sizeBytes: Self.oplPartitionSizeBytes, on: disk)
+        try await createPartitionIfNeeded(name: PFSDestinationPaths.oplPartitionName, sizeBytes: PartitionSizeSuggestions.oplPartitionSizeBytes, on: disk)
     }
 
     /// The dedicated `SMS_Media` partition for converted video files -- see
-    /// PFSDestinationPaths.smsMediaPartitionName's doc comment.
-    func createSMSMediaPartitionIfNeeded(on disk: Disk) async throws {
-        try await createPartitionIfNeeded(name: PFSDestinationPaths.smsMediaPartitionName, sizeBytes: PFSDestinationPaths.smsMediaPartitionSizeBytes, on: disk)
+    /// PFSDestinationPaths.smsMediaPartitionName's doc comment. Unlike
+    /// `+OPL`, this genuinely scales with drive size (video is large), so
+    /// `sizeBytes` is always caller-supplied -- sourced from either the
+    /// setup wizard or PartitionSizePromptSheet's one-time fallback prompt,
+    /// never a silent hardcoded default. See PartitionSizeSuggestions' doc
+    /// comment for why a single fixed size doesn't fit every drive.
+    func createSMSMediaPartitionIfNeeded(sizeBytes: Int64, on disk: Disk) async throws {
+        try await createPartitionIfNeeded(name: PFSDestinationPaths.smsMediaPartitionName, sizeBytes: sizeBytes, on: disk)
     }
 
     /// FreeHDBoot's own dedicated apps partition -- the exact `PP.FHDB.APPS`
     /// name its stock `FREEHDB.CNF` OSD menu paths expect (see
-    /// FreeHDBootDestinationPaths.fhdbAppsPartitionName's doc comment). 128MB
-    /// matches `+OPL`'s own default size since this only ever holds a
-    /// handful of small ELF binaries.
+    /// FreeHDBootDestinationPaths.fhdbAppsPartitionName's doc comment). Same
+    /// "never scales, no prompt needed" reasoning as createOPLPartitionIfNeeded.
     func createFHDBAppsPartitionIfNeeded(on disk: Disk) async throws {
-        try await createPartitionIfNeeded(name: FreeHDBootDestinationPaths.fhdbAppsPartitionName, sizeBytes: Self.oplPartitionSizeBytes, on: disk)
+        try await createPartitionIfNeeded(name: FreeHDBootDestinationPaths.fhdbAppsPartitionName, sizeBytes: PartitionSizeSuggestions.fhdbAppsPartitionSizeBytes, on: disk)
+    }
+
+    /// The dedicated `USERFILES` partition -- arbitrary user files/folders,
+    /// see UserFilesService. Genuinely scales with drive size like
+    /// SMS_Media, so `sizeBytes` is always caller-supplied -- same reasoning
+    /// as createSMSMediaPartitionIfNeeded.
+    func createUserFilesPartitionIfNeeded(sizeBytes: Int64, on disk: Disk) async throws {
+        try await createPartitionIfNeeded(name: PFSDestinationPaths.userFilesPartitionName, sizeBytes: sizeBytes, on: disk)
     }
 
     /// Copies the user-supplied POPS.ELF/IOPRP252.IMG (Sony-copyrighted,
@@ -296,6 +307,33 @@ final class PS1GameService {
         )
         try throwIfFailed(exitCode: exitCode, stderr: stderr)
         return names ?? []
+    }
+
+    /// Concurrently fetches both `listFiles` (every entry, despite the name
+    /// -- see its own doc comment) and `listDirectories` for the same path,
+    /// so callers that need to distinguish files from directories at a path
+    /// don't each re-issue the same two calls and re-derive the split
+    /// themselves (SMSMediaService.filesOnly subtracts directories out;
+    /// UserFilesService.listEntries keeps both, annotated -- this is the one
+    /// shared fetch both build on).
+    func listEntriesSplitByDirectory(partitionName: String, pfsPath: String, on disk: Disk) async throws -> (allNames: [String], directoryNames: Set<String>) {
+        async let allEntries = listFiles(partitionName: partitionName, pfsPath: pfsPath, on: disk)
+        async let directoryNames = listDirectories(partitionName: partitionName, pfsPath: pfsPath, on: disk)
+        return (try await allEntries, Set(try await directoryNames))
+    }
+
+    /// Creates a directory (and any missing intermediate parents) at pfsPath
+    /// within the partition, without writing any file -- e.g. the User Files
+    /// feature's explicit "New Folder" action. Every other directory
+    /// creation in this app happens only as a side effect of putFile.
+    func makeDirectory(partitionName: String, pfsPath: String, on disk: Disk) async throws {
+        try await guardNotBootDisk(disk)
+        let (exitCode, stderr) = try await helper.makePFSDirectory(
+            devicePath: disk.devicePath,
+            partitionName: partitionName,
+            pfsPath: pfsPath
+        )
+        try throwIfFailed(exitCode: exitCode, stderr: stderr)
     }
 
     /// Removes a single flat file at pfsPath within the partition -- e.g. a

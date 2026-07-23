@@ -41,7 +41,10 @@ struct AddPS1GameSheet: View {
                             await viewModel.install(on: disk) {
                                 await onInstalled()
                             }
-                            if viewModel.lastError == nil {
+                            // Don't dismiss if install() returned early to
+                            // show PartitionSizePromptSheet -- see
+                            // AddVideoSheet's identical reasoning.
+                            if viewModel.lastError == nil && viewModel.pendingPartitionSizePrompt == nil {
                                 dismiss()
                             }
                         }
@@ -61,6 +64,21 @@ struct AddPS1GameSheet: View {
                     progressText: viewModel.phaseText,
                     onCancel: nil
                 )
+            }
+        }
+        .sheet(item: Binding(
+            get: { viewModel.pendingPartitionSizePrompt },
+            set: { viewModel.pendingPartitionSizePrompt = $0 }
+        )) { request in
+            PartitionSizePromptSheet(request: request) { sizeBytes in
+                Task {
+                    await viewModel.confirmPartitionSize(sizeBytes, on: disk) {
+                        await onInstalled()
+                    }
+                    if viewModel.lastError == nil {
+                        dismiss()
+                    }
+                }
             }
         }
         .sheet(isPresented: Binding(

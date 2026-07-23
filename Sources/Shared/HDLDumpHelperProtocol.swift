@@ -105,6 +105,14 @@ enum HDLDumpHelperConstants {
 
     func putPFSFile(devicePath: String, partitionName: String, localSourcePath: String, pfsDestPath: String, with reply: @escaping (Int32, String) -> Void)
 
+    /// Creates a directory (and any missing intermediate parents) at the
+    /// given path within the partition, without writing any file -- unlike
+    /// every existing directory creation in this app so far, which only ever
+    /// happens as a side effect of putPFSFile's own `mkdir_recursive`. Added
+    /// for the User Files feature's explicit "New Folder" action. Same
+    /// partition allowlist/boot-disk guard as removePFSFile/removePFSTree.
+    func makePFSDirectory(devicePath: String, partitionName: String, pfsPath: String, with reply: @escaping (Int32, String) -> Void)
+
     /// Reads a single file's contents back from a PFS partition into memory
     /// via `pfsutil get`, e.g. to display previously-installed cover art.
     /// Only intended for small files (cover art PNGs, tens-hundreds of KB) --

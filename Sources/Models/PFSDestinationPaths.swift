@@ -183,23 +183,58 @@ enum PFSDestinationPaths {
     /// is SMS's own precedent: its README changelog names this exact
     /// partition as the convention for HDD-resident media. Adopted here as a
     /// dedicated partition, matching this app's existing one-partition-per-
-    /// content-type pattern (`__.POPS`, `+OPL`). Videos sit flat at the
-    /// partition root, same as `__.POPS`'s VCDs -- no subdirectory.
+    /// content-type pattern (`__.POPS`, `+OPL`).
+    ///
+    /// Movies live flat under a `Movies/` subdirectory; TV episodes live
+    /// under `Shows/<Show Name>/Season <N>/`, mirroring how a real DVD/media
+    /// library is organized -- both are just nested PFS paths, no different
+    /// mechanically from `+OPL/APPS/<app>/`, since SMS browses directories
+    /// fine either way. Movies originally lived directly at the partition
+    /// root with no subdirectory at all; `smsMediaVideoPFSPath` is kept
+    /// around so previously-installed movies at that legacy location are
+    /// still found and playable, not orphaned by this change.
     static let smsMediaPartitionName = "SMS_Media"
 
-    /// No externally-imposed default the way `+OPL`'s 128MB mirrors OPL's own
-    /// auto-create size -- chosen generously since converted videos (even at
-    /// SD bitrates) run much larger than PS1 VCDs or homebrew apps. Already a
-    /// clean multiple of 128MB (32 * 128MB), matching APA's alignment
-    /// requirement (see PFSPartitionSizing).
-    static let smsMediaPartitionSizeBytes: Int64 = 4 * 1024 * 1024 * 1024
+    static let smsMediaMoviesSubdirectory = "Movies"
+    static let smsMediaShowsSubdirectory = "Shows"
 
-    /// The PFS-side path for a video file at the `SMS_Media` partition root,
-    /// e.g. `smsMediaVideoPFSPath(filename: "Movie.avi")` -> `"Movie.avi"`.
-    /// A thin, named wrapper (rather than callers using the filename
-    /// directly) so the "flat at partition root" convention is documented and
-    /// enforced in one place, matching every other PFS-path builder here.
+    /// The dedicated `USERFILES` partition for arbitrary user files/folders
+    /// -- see UserFilesService. Like `SMS_Media`, genuinely scales with
+    /// drive size (see PartitionSizeSuggestions), so unlike the fixed infra
+    /// partitions there's no size constant here -- it's always
+    /// caller-supplied at creation time.
+    static let userFilesPartitionName = "USERFILES"
+
+    /// The legacy PFS-side path for a movie file directly at the `SMS_Media`
+    /// partition root, e.g. `smsMediaVideoPFSPath(filename: "Movie.avi")` ->
+    /// `"Movie.avi"`. Superseded by `smsMediaMoviePFSPath` for new installs --
+    /// kept so movies installed before the `Movies/` subdirectory existed are
+    /// still found by SMSMediaService.listVideos/deleteVideo.
     static func smsMediaVideoPFSPath(filename: String) -> String {
         filename
+    }
+
+    /// The PFS-side path for a movie file under `SMS_Media`'s `Movies/`
+    /// subdirectory, e.g. `smsMediaMoviePFSPath(filename: "Movie.avi")` ->
+    /// `"Movies/Movie.avi"`. Where new movies are installed going forward.
+    static func smsMediaMoviePFSPath(filename: String) -> String {
+        "\(smsMediaMoviesSubdirectory)/\(filename)"
+    }
+
+    /// The folder name for a season within a show, e.g.
+    /// `smsMediaSeasonFolderName(seasonNumber: 3)` -> `"Season 3"`. A single
+    /// source of truth so building this name (installing an episode) and
+    /// parsing it back (listing episodes, TVShowService.listEpisodes) can't
+    /// drift out of sync.
+    static func smsMediaSeasonFolderName(seasonNumber: Int) -> String {
+        "Season \(seasonNumber)"
+    }
+
+    /// The PFS-side path for a TV episode file, e.g.
+    /// `smsMediaShowEpisodePFSPath(showName: "Firefly", seasonNumber: 1,
+    /// filename: "01 - Serenity.avi")` ->
+    /// `"Shows/Firefly/Season 1/01 - Serenity.avi"`.
+    static func smsMediaShowEpisodePFSPath(showName: String, seasonNumber: Int, filename: String) -> String {
+        "\(smsMediaShowsSubdirectory)/\(showName)/\(smsMediaSeasonFolderName(seasonNumber: seasonNumber))/\(filename)"
     }
 }

@@ -2,8 +2,8 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-struct AddVideoSheet: View {
-    @ObservedObject var viewModel: AddVideoViewModel
+struct AddTVEpisodeSheet: View {
+    @ObservedObject var viewModel: AddTVEpisodeViewModel
     @Environment(\.dismiss) private var dismiss
     let disk: Disk
     let onInstalled: () async -> Void
@@ -11,7 +11,7 @@ struct AddVideoSheet: View {
     var body: some View {
         ZStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Add Video to \(disk.displayName)")
+                Text("Add TV Episode to \(disk.displayName)")
                     .font(.title2)
 
                 HStack {
@@ -21,20 +21,34 @@ struct AddVideoSheet: View {
                     Button("Choose Video…") { chooseFile() }
                 }
 
-                TextField("Video Name", text: $viewModel.videoName)
+                TextField("Show Name", text: $viewModel.showName)
 
-                // A plain numeric field rather than a Stepper (unlike
-                // AddTVEpisodeSheet's Season/Episode Number) -- year spans a
-                // huge sparse range nobody wants to click through one at a
-                // time, and TextField(_:value:format:) already bridges
-                // empty-string <-> nil natively.
-                TextField("Year (optional)", value: $viewModel.releaseYear, format: .number.grouping(.never))
+                HStack {
+                    Stepper(value: $viewModel.seasonNumber, in: 1...999) {
+                        HStack {
+                            Text("Season Number")
+                            Spacer()
+                            Text("\(viewModel.seasonNumber)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Stepper(value: $viewModel.episodeNumber, in: 1...999) {
+                        HStack {
+                            Text("Episode Number")
+                            Spacer()
+                            Text("\(viewModel.episodeNumber)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                TextField("Episode Name", text: $viewModel.episodeName)
 
                 HStack {
                     Button("Look Up Online") {
-                        Task { await viewModel.lookUpMovieMetadata() }
+                        Task { await viewModel.lookUpEpisodeMetadata() }
                     }
-                    .disabled(viewModel.videoName.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isLookingUpMetadata)
+                    .disabled(viewModel.showName.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isLookingUpMetadata)
                     if viewModel.isLookingUpMetadata {
                         ProgressView().controlSize(.small)
                     }
@@ -63,7 +77,7 @@ struct AddVideoSheet: View {
                     }
                 }
 
-                Text("The video is converted to a format Simple Media System (SMS) can play (MPEG-4/Xvid in an AVI container, MP3 audio) at the resolution tuned for the display you pick above. SMS's own decoder has a hard resolution ceiling, so the two widescreen options are the highest quality actually achievable -- not literal 720p/1080p pixel counts.")
+                Text("The episode is installed to \"Shows/\(viewModel.showName.isEmpty ? "Show Name" : viewModel.showName)/Season \(viewModel.seasonNumber)/\" and converted to a format Simple Media System (SMS) can play (MPEG-4/Xvid in an AVI container, MP3 audio) at the resolution tuned for the display you pick above. SMS's own decoder has a hard resolution ceiling, so the two widescreen options are the highest quality actually achievable -- not literal 720p/1080p pixel counts.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -76,9 +90,8 @@ struct AddVideoSheet: View {
                                 await onInstalled()
                             }
                             // Don't dismiss if install() returned early to
-                            // show PartitionSizePromptSheet (no error, but
-                            // nothing installed yet either) -- only close
-                            // once it's actually run to completion.
+                            // show PartitionSizePromptSheet -- see
+                            // AddVideoSheet's identical reasoning.
                             if viewModel.lastError == nil && viewModel.pendingPartitionSizePrompt == nil {
                                 dismiss()
                             }
@@ -102,16 +115,16 @@ struct AddVideoSheet: View {
             }
         }
         .sheet(isPresented: Binding(
-            get: { !viewModel.movieCandidates.isEmpty },
+            get: { !viewModel.showCandidates.isEmpty },
             set: { isPresented in
-                if !isPresented { viewModel.movieCandidates = [] }
+                if !isPresented { viewModel.showCandidates = [] }
             }
         )) {
             TMDBDisambiguationSheet(
-                title: "Which movie did you mean?",
-                candidates: viewModel.movieCandidates,
+                title: "Which show did you mean?",
+                candidates: viewModel.showCandidates,
                 onSelect: { candidate in
-                    viewModel.selectMovie(candidate)
+                    Task { await viewModel.selectShow(candidate) }
                 }
             )
         }
@@ -152,7 +165,7 @@ struct AddVideoSheet: View {
         // wide open, but the picker itself still needs an explicit
         // allowlist. UTType(filenameExtension:) synthesizes a dynamic type
         // for any extension without requiring prior registration, same
-        // idiom AddAppSheet/AddPS1GameSheet already rely on.
+        // idiom AddVideoSheet/AddAppSheet/AddPS1GameSheet already rely on.
         panel.allowedContentTypes = [
             "mp4", "mov", "mkv", "avi", "webm", "m4v", "wmv", "flv",
         ].compactMap { UTType(filenameExtension: $0) }

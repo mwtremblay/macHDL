@@ -189,10 +189,15 @@ final class BatchInstallPS1GameViewModel: ObservableObject {
         _ = try await converter.convert(cueURL: cueToConvert, outputVCDURL: vcdURL)
 
         currentItemPhase = .copyingToDrive
+        // Batch install has no per-item interactive prompt (would mean
+        // stopping a multi-game batch partway through to ask a question) --
+        // uses the drive-capacity-aware suggestion directly, same value
+        // InstallPS1GameViewModel's own PartitionSizePromptSheet would have
+        // prefilled for a single install.
         try await service.installGameWithOverflow(
             vcdURL: vcdURL,
             vcdFilename: vcdFilename,
-            defaultPartitionSizeBytes: InstallPS1GameViewModel.defaultGamesPartitionSizeBytes,
+            defaultPartitionSizeBytes: PartitionSizeSuggestions.suggestions(forDriveSizeBytes: disk.sizeBytes).ps1Games,
             on: disk
         )
 

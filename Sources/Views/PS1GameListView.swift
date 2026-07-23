@@ -3,6 +3,7 @@ import SwiftUI
 struct PS1GameListView: View {
     @ObservedObject var viewModel: PS1GameListViewModel
     let disk: Disk?
+    @State private var sortOrder = [KeyPathComparator(\PS1Game.displayName)]
 
     var body: some View {
         Group {
@@ -11,7 +12,7 @@ struct PS1GameListView: View {
             } else if viewModel.games.isEmpty && !viewModel.isLoading {
                 ContentUnavailableFallback(text: "No PS1 games installed on this drive.")
             } else {
-                Table(viewModel.games, selection: $viewModel.selectedGameID) {
+                Table(viewModel.games.sorted(using: sortOrder), selection: $viewModel.selectedGameID, sortOrder: $sortOrder) {
                     TableColumn("Name", value: \.displayName)
                 }
             }

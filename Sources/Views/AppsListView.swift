@@ -4,6 +4,7 @@ struct AppsListView: View {
     @ObservedObject var viewModel: AppsListViewModel
     let disk: Disk?
     var tabTitle: String = "Apps"
+    @State private var sortOrder = [KeyPathComparator(\InstalledApp.displayName)]
 
     var body: some View {
         Group {
@@ -12,7 +13,7 @@ struct AppsListView: View {
             } else if viewModel.apps.isEmpty && !viewModel.isLoading {
                 ContentUnavailableFallback(text: "No apps installed on this drive.")
             } else {
-                Table(viewModel.apps, selection: $viewModel.selectedAppID) {
+                Table(viewModel.apps.sorted(using: sortOrder), selection: $viewModel.selectedAppID, sortOrder: $sortOrder) {
                     TableColumn("Name", value: \.displayName)
                 }
             }

@@ -7,5 +7,9 @@ struct MacHDLApp: App {
             ContentView()
         }
         .windowResizability(.contentSize)
+
+        Settings {
+            SettingsView()
+        }
     }
 }

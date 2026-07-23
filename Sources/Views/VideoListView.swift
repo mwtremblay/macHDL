@@ -3,6 +3,7 @@ import SwiftUI
 struct VideoListView: View {
     @ObservedObject var viewModel: VideoListViewModel
     let disk: Disk?
+    @State private var sortOrder = [KeyPathComparator(\VideoFile.displayName)]
 
     var body: some View {
         Group {
@@ -11,7 +12,7 @@ struct VideoListView: View {
             } else if viewModel.videos.isEmpty && !viewModel.isLoading {
                 ContentUnavailableFallback(text: "No videos installed on this drive.")
             } else {
-                Table(viewModel.videos, selection: $viewModel.selectedVideoID) {
+                Table(viewModel.videos.sorted(using: sortOrder), selection: $viewModel.selectedVideoID, sortOrder: $sortOrder) {
                     TableColumn("Name", value: \.displayName)
                 }
             }

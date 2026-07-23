@@ -328,6 +328,55 @@ static int cmd_list(const char *partition_name, const char *pfs_path)
     return retval;
 }
 
+/* Creates a directory (and every missing parent along the way, via the
+ * existing mkdir_recursive) without writing any file into it -- unlike
+ * cmd_put, which only ever creates a directory as a side effect of writing a
+ * file. Added for the User Files feature's explicit "New Folder" action.
+ * Best-effort per level like mkdir_recursive itself: "already exists" is a
+ * silently-ignored, expected outcome for every level except possibly the
+ * final one, which the caller-visible success/failure below still reflects
+ * accurately by checking iomanX_mkdir's own direct result for the leaf
+ * (mkdir_recursive returns void, so this re-checks the final component
+ * explicitly rather than trusting mkdir_recursive blindly). Refuses to touch
+ * the partition root, matching cmd_rm/cmd_rmtree's identical existing
+ * guard. */
+static int cmd_mkdir(const char *partition_name, const char *pfs_path)
+{
+    while (pfs_path[0] == '/')
+        pfs_path++;
+    if (pfs_path[0] == '\0') {
+        fprintf(stderr, "(!) refusing to operate on the partition root\n");
+        return 1;
+    }
+
+    if (mount_partition(partition_name) != 0)
+        return 1;
+
+    char dir_path[512];
+    build_pfs_path(dir_path, sizeof(dir_path), pfs_path);
+
+    mkdir_recursive(dir_path);
+
+    /* mkdir_recursive is best-effort/void by design (every level after the
+     * first legitimately already exists on repeat calls) -- but the leaf
+     * directory itself must actually exist now, or this command should
+     * report failure rather than a false success. iomanX_dopen/close is a
+     * cheap existence check that doesn't care whether iomanX_mkdir's own
+     * return was 0 (created) or -EEXIST (already there, e.g. calling this
+     * twice for the same folder). */
+    int retval = 0;
+    int dh = iomanX_dopen(dir_path);
+    if (dh >= 0) {
+        iomanX_close(dh);
+    } else {
+        fprintf(stderr, "(!) %s: %s\n", dir_path, strerror(-dh));
+        retval = 1;
+    }
+
+    unmount_partition();
+    return retval;
+}
+
 /* Removes a single file. Refuses to touch the partition root (an empty or
  * "/" pfs_path) as a defensive guard against a caller-side bug ever turning
  * into a wildcard-style deletion. */
@@ -434,10 +483,11 @@ static void show_usage(const char *prog)
             "  %s put <device> <partition> <destDir> <destFilename> <localSourcePath>\n"
             "  %s get <device> <partition> <pfsPath> <localDestPath>\n"
             "  %s list <device> <partition> <path>\n"
+            "  %s mkdir <device> <partition> <path>\n"
             "  %s rm <device> <partition> <path>\n"
             "  %s rmtree <device> <partition> <path>\n"
             "(destDir may be empty (\"\") for the partition root)\n",
-            prog, prog, prog, prog, prog);
+            prog, prog, prog, prog, prog, prog);
 }
 
 int main(int argc, char *argv[])
@@ -474,6 +524,14 @@ int main(int argc, char *argv[])
         if (init_device(argv[2]) != 0)
             return 1;
         result = cmd_list(argv[3], argv[4]);
+    } else if (strcmp(command, "mkdir") == 0) {
+        if (argc != 5) {
+            show_usage(argv[0]);
+            return 1;
+        }
+        if (init_device(argv[2]) != 0)
+            return 1;
+        result = cmd_mkdir(argv[3], argv[4]);
     } else if (strcmp(command, "rm") == 0) {
         if (argc != 5) {
             show_usage(argv[0]);

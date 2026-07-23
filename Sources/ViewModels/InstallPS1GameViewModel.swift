@@ -17,14 +17,14 @@ final class InstallPS1GameViewModel: ObservableObject {
     @Published var lastError: IdentifiableError?
     @Published private(set) var elapsedSeconds: Int = 0
 
-    /// New PS1 games partitions (`__.POPS`, or an overflow `__.POPS1`-
-    /// `__.POPS10` once a previous one fills up -- see
-    /// `PS1GameService.installGameWithOverflow`) are created at this size.
-    /// Originally 4GB ("a handful of games"), which in real use only fit 4
-    /// games before filling up (VCDs are typically 600MB-1GB) -- bumped
-    /// significantly for real libraries, now that filling a partition is a
-    /// transparent, automatic overflow instead of a hard install failure.
-    static let defaultGamesPartitionSizeBytes: Int64 = 32_000_000_000
+    /// Set by `install` when `__.POPS` doesn't exist yet -- see
+    /// AddVideoViewModel.pendingPartitionSizePrompt's identical reasoning.
+    /// Overflow partitions (`__.POPS1`-`__.POPS10`, once the first fills up
+    /// -- see PS1GameService.installGameWithOverflow) reuse whatever size
+    /// was chosen here for the first one; only the very first `__.POPS`
+    /// creation ever prompts.
+    @Published var pendingPartitionSizePrompt: PartitionSizePromptRequest?
+    private var confirmedPartitionSizeBytes: Int64?
 
     private let service: PS1GameService
     private let converter: PS1GameConverter
@@ -86,10 +86,38 @@ final class InstallPS1GameViewModel: ObservableObject {
         name = ""
         lastError = nil
         elapsedSeconds = 0
+        pendingPartitionSizePrompt = nil
+        confirmedPartitionSizeBytes = nil
+    }
+
+    /// Called by AddPS1GameSheet's PartitionSizePromptSheet once the user
+    /// confirms a size -- see AddVideoViewModel.confirmPartitionSize's
+    /// identical reasoning.
+    func confirmPartitionSize(_ sizeBytes: Int64, on disk: Disk, completion: @escaping () async -> Void) async {
+        confirmedPartitionSizeBytes = sizeBytes
+        pendingPartitionSizePrompt = nil
+        await install(on: disk, completion: completion)
     }
 
     func install(on disk: Disk, completion: @escaping () async -> Void) async {
         guard let sourceURL else { return }
+
+        // __.POPS genuinely scales with drive size (see
+        // PartitionSizeSuggestions) -- same sizing-decision check as
+        // AddVideoViewModel.install's identical SMS_Media check.
+        let sizeBytesIfCreating: Int64
+        switch await PartitionSizeGate.decide(
+            confirmedSizeBytes: confirmedPartitionSizeBytes,
+            suggestedSizeBytes: PartitionSizeSuggestions.suggestions(forDriveSizeBytes: disk.sizeBytes).ps1Games,
+            partitionExists: { (try? await self.service.gamesPartitionExists(on: disk)) ?? true }
+        ) {
+        case .proceed(let sizeBytes):
+            sizeBytesIfCreating = sizeBytes
+        case .awaitingPrompt(let suggestedSizeBytes):
+            pendingPartitionSizePrompt = PartitionSizePromptRequest(partitionDisplayName: "PS1 Games", suggestedSizeBytes: suggestedSizeBytes)
+            return
+        }
+
         let vcdFilename = PFSDestinationPaths.gameVCDFilename(forGameNamed: name.trimmingCharacters(in: .whitespaces))
         startElapsedTimer()
         defer {
@@ -125,7 +153,7 @@ final class InstallPS1GameViewModel: ObservableObject {
             try await service.installGameWithOverflow(
                 vcdURL: vcdURL,
                 vcdFilename: vcdFilename,
-                defaultPartitionSizeBytes: Self.defaultGamesPartitionSizeBytes,
+                defaultPartitionSizeBytes: sizeBytesIfCreating,
                 on: disk
             )
 
