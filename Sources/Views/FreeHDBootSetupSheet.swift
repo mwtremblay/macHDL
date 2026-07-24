@@ -102,10 +102,18 @@ struct FreeHDBootSetupSheet: View {
         }
     }
 
+    // Named counts only, never the raw partition-name list: a drive with a
+    // large existing game library (each game is its own PFS partition) can
+    // easily have 70+ entries, and a system .alert sizes itself to fit its
+    // message with no scrolling -- joining all of them in here made the
+    // alert balloon to fill (and exceed) the screen, pushing its own
+    // buttons out of reach. See statusSection below for the identical fix
+    // to the sheet's own inline listing.
     private var wipeConfirmationMessage: String {
         var message = "This will completely erase ALL data on \(disk.displayName) (\(disk.displaySizeText)) and rebuild it from scratch as a FreeHDBoot drive, including PS1 Games/Movies/User Files partitions at the sizes shown. This cannot be undone."
         if viewModel.driveAppearsBlank == false {
-            message += "\n\nThis drive is NOT blank -- it currently has: \(viewModel.existingPartitionNames.joined(separator: ", ")). All of that will be permanently destroyed."
+            let count = viewModel.existingPartitionNames.count
+            message += "\n\nThis drive is NOT blank -- it currently has \(count) existing partition\(count == 1 ? "" : "s"). All of that will be permanently destroyed."
         }
         return message
     }
@@ -126,7 +134,11 @@ struct FreeHDBootSetupSheet: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("This drive already has data on it.", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
-                    Text("Existing partitions: \(viewModel.existingPartitionNames.joined(separator: ", "))")
+                    // Count only, not the raw partition-name list -- see
+                    // wipeConfirmationMessage's doc comment for why (a large
+                    // existing game library can have 70+ entries, which grew
+                    // this sheet's own window absurdly tall).
+                    Text("Existing partitions: \(viewModel.existingPartitionNames.count)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
